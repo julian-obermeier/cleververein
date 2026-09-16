@@ -3,6 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InstallController;
+use App\Http\Controllers\MemberController;
+use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
@@ -27,5 +29,25 @@ Route::middleware('installed')->group(function (): void {
         Route::get('/email-bestaetigen/{id}/{hash}', [VerifyEmailController::class, 'verify'])->middleware('signed')->name('verification.verify');
         Route::post('/email-bestaetigung-senden', [VerifyEmailController::class, 'resend'])->middleware('throttle:3,1')->name('verification.send');
     });
-    Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified', 'tenant'])->name('dashboard');
+
+    Route::middleware(['auth', 'verified', 'tenant'])->group(function (): void {
+        Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+        Route::get('/mitglieder', [MemberController::class, 'index'])->name('members.index');
+        Route::get('/mitglieder/anlegen', [MemberController::class, 'create'])->name('members.create');
+        Route::post('/mitglieder', [MemberController::class, 'store'])->name('members.store');
+        Route::get('/mitglieder/{member}', [MemberController::class, 'show'])->name('members.show');
+        Route::get('/mitglieder/{member}/bearbeiten', [MemberController::class, 'edit'])->name('members.edit');
+        Route::put('/mitglieder/{member}', [MemberController::class, 'update'])->name('members.update');
+        Route::delete('/mitglieder/{member}', [MemberController::class, 'archive'])->name('members.archive');
+        Route::post('/mitglieder/{member}/wiederherstellen', [MemberController::class, 'restore'])->whereNumber('member')->name('members.restore');
+        Route::post('/mitglieder/{member}/mitgliedschaften', [MemberController::class, 'storeMembership'])->name('members.memberships.store');
+        Route::delete('/mitglieder/{member}/mitgliedschaften/{membership}', [MemberController::class, 'destroyMembership'])->name('members.memberships.destroy');
+
+        Route::get('/organisation', [OrganizationController::class, 'index'])->name('organization.index');
+        Route::post('/organisation/typen', [OrganizationController::class, 'storeType'])->name('organization.types.store');
+        Route::post('/organisation/einheiten', [OrganizationController::class, 'storeUnit'])->name('organization.units.store');
+        Route::put('/organisation/einheiten/{unit}', [OrganizationController::class, 'updateUnit'])->name('organization.units.update');
+        Route::delete('/organisation/einheiten/{unit}', [OrganizationController::class, 'archiveUnit'])->name('organization.units.archive');
+    });
 });
