@@ -27,6 +27,7 @@
         ['Steuerberater','finance.tax-export.index','finance.tax-export.*','M4 4h16v16H4V4Zm3 3h10v3H7V7Zm0 5h4v5H7v-5Zm6 0h4v2h-4v-2Zm0 3h4v2h-4v-2Z'],
         ['Kasse & Prüfung','finance.controls.index','finance.controls.*|finance.receipts.*|finance.cash.*|finance.periods.*|finance.cash-audits.*','M4 4h16v16H4V4Zm3 3v3h10V7H7Zm0 6v4h4v-4H7Zm7 0v4h3v-4h-3Z'],
         ['Spenden & Erstattungen','finance.recovery.index','finance.recovery.*|finance.payment-adjustments.*|finance.donations.*|finance.donation-certificates.*|finance.donation-collective-certificates.*','M12 21s-7-4.35-7-10A4 4 0 0 1 12 7a4 4 0 0 1 7 0c0 5.65-7 10-7 10Zm-1-8H8v-2h3V8h2v3h3v2h-3v3h-2v-3Z'],
+        ['Sammelbestätigungen','finance.donation-collective.index','finance.donation-collective.index','M5 4h14v3H5V4Zm0 5h14v11H5V9Zm3 3h8v2H8v-2Zm0 4h5v2H8v-2Z'],
         ['Haushalte','members.households.index','members.households.*','M4 11 12 3 20 11v9a1 1 0 0 1-1 1h-5v-6h-4v6H9a1 1 0 0 1-1-1v-9Zm5-4V4h6v3l-3-2-3 2Z'],
         ['Ämter & Funktionen','members.functions.index','members.functions.*','M12 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 21v-2a7 7 0 0 1 14 0v2H5Zm14-13h2v5h-2V8Zm-2 2h6v2h-6v-2Z'],
         ['Organisation','organization.index','organization.*','M4 3h7v6H4V3Zm9 0h7v6h-7V3ZM4 15h7v6H4v-6Zm9 0h7v6h-7v-6ZM7 9v3h10V9h2v5H5V9h2Z'],
