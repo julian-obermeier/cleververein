@@ -12,7 +12,7 @@ class BankImportBatch extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'public_id', 'original_name', 'file_hash', 'row_count', 'matched_count', 'imported_by',
+        'public_id', 'original_name', 'file_hash', 'file_type', 'message_id', 'row_count', 'matched_count', 'imported_by',
     ];
 
     public function transactions(): HasMany
