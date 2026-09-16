@@ -156,7 +156,7 @@ class ExtendedMemberManagementTest extends TestCase
 
         $member = Member::withoutGlobalScope('tenant')->where('tenant_id', $tenant->id)->where('member_number', 'F-100')->firstOrFail();
         $this->assertSame('2026-09-01', $member->joined_at?->format('Y-m-d'));
-        $this->assertDatabaseHas('people', ['tenant_id' => $tenant->id, 'id' => $member->person_id, 'birth_date' => '1990-03-12']);
+        $this->assertSame('1990-03-12', $member->person->birth_date?->format('Y-m-d'));
         $this->assertDatabaseHas('memberships', [
             'tenant_id' => $tenant->id,
             'member_id' => $member->id,
