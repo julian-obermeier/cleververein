@@ -2,6 +2,14 @@
     @php
         $selectedTemplate = request('template') ? $templates->firstWhere('id', (int) request('template')) : null;
         $selectedEvent = request('event') ? $events->firstWhere('id', (int) request('event')) : null;
+        $placeholderOpen = '{' . '{';
+        $placeholderClose = '}' . '}';
+        $defaultCampaignSubject = $selectedEvent
+            ? 'Einladung: ' . $placeholderOpen . 'veranstaltung.titel' . $placeholderClose
+            : '';
+        $defaultCampaignBody = $selectedEvent
+            ? "Hallo {$placeholderOpen}mitglied.vorname{$placeholderClose},\n\nwir laden dich zu {$placeholderOpen}veranstaltung.titel{$placeholderClose} am {$placeholderOpen}veranstaltung.datum{$placeholderClose} ein.\nOrt: {$placeholderOpen}veranstaltung.ort{$placeholderClose}\n\nBitte gib uns hier deine Rückmeldung:\n{$placeholderOpen}anmeldung.link{$placeholderClose}\n\nViele Grüße"
+            : '';
     @endphp
     <div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
         <div>
@@ -59,9 +67,9 @@
                         <label class="block"><span class="text-xs font-semibold">Veranstaltung</span><select class="cv-input mt-1" name="event_id"><option value="">–</option>@foreach($events as $event)<option value="{{ $event->id }}" @selected($selectedEvent?->id === $event->id)>{{ $event->starts_at->format('d.m.Y') }} · {{ $event->title }}</option>@endforeach</select></label>
                         <label class="block"><span class="text-xs font-semibold">Segment</span><select class="cv-input mt-1" name="member_segment_id"><option value="">–</option>@foreach($segments as $segment)<option value="{{ $segment->id }}">{{ $segment->name }}</option>@endforeach</select></label>
                         <label class="block"><span class="text-xs font-semibold">Gliederung</span><select class="cv-input mt-1" name="organization_unit_id"><option value="">–</option>@foreach($organizations as $org)<option value="{{ $org->id }}">{{ $org->name }}</option>@endforeach</select></label>
-                        <label class="block"><span class="text-sm font-semibold">Betreff</span><input class="cv-input mt-1" name="subject" value="{{ $selectedTemplate?->subject ?: ($selectedEvent ? 'Einladung: {{veranstaltung.titel}}' : '') }}" required></label>
-                        <label class="block"><span class="text-sm font-semibold">Nachricht</span><textarea class="cv-input mt-1 min-h-56" name="body" required>{{ $selectedTemplate?->body ?: ($selectedEvent ? "Hallo {{mitglied.vorname}},\n\nwir laden dich zu {{veranstaltung.titel}} am {{veranstaltung.datum}} ein.\nOrt: {{veranstaltung.ort}}\n\nBitte gib uns hier deine Rückmeldung:\n{{anmeldung.link}}\n\nViele Grüße" : '') }}</textarea></label>
-                        <div class="rounded-md bg-slate-50 p-3 text-xs text-slate-600"><strong>Platzhalter:</strong><br>{{ '{{mitglied.name}}' }}, {{ '{{mitglied.vorname}}' }}, {{ '{{mitglied.nummer}}' }}, {{ '{{veranstaltung.titel}}' }}, {{ '{{veranstaltung.datum}}' }}, {{ '{{veranstaltung.ort}}' }}, {{ '{{anmeldung.link}}' }}</div>
+                        <label class="block"><span class="text-sm font-semibold">Betreff</span><input class="cv-input mt-1" name="subject" value="{{ old('subject', $selectedTemplate?->subject ?: $defaultCampaignSubject) }}" required></label>
+                        <label class="block"><span class="text-sm font-semibold">Nachricht</span><textarea class="cv-input mt-1 min-h-56" name="body" required>{{ old('body', $selectedTemplate?->body ?: $defaultCampaignBody) }}</textarea></label>
+                        <div class="rounded-md bg-slate-50 p-3 text-xs text-slate-600"><strong>Platzhalter:</strong><br>{{ $placeholderOpen.'mitglied.name'.$placeholderClose }}, {{ $placeholderOpen.'mitglied.vorname'.$placeholderClose }}, {{ $placeholderOpen.'mitglied.nummer'.$placeholderClose }}, {{ $placeholderOpen.'veranstaltung.titel'.$placeholderClose }}, {{ $placeholderOpen.'veranstaltung.datum'.$placeholderClose }}, {{ $placeholderOpen.'veranstaltung.ort'.$placeholderClose }}, {{ $placeholderOpen.'anmeldung.link'.$placeholderClose }}</div>
                         <button class="cv-button-primary w-full">Kampagne als Entwurf anlegen</button>
                     </form>
                 </section>
