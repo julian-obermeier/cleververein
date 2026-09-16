@@ -18,7 +18,8 @@ class MemberBulkController extends Controller
         private PermissionService $permissions,
         private AuditService $audit,
         private TenantContext $tenant,
-    ) {}
+    ) {
+    }
 
     public function apply(Request $request): RedirectResponse
     {
