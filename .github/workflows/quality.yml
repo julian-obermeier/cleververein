@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -30,3 +33,13 @@ jobs:
           retention-days: 7
       - run: ./vendor/bin/pint --test
       - run: php artisan test
+      - name: Commit compiled production assets
+        if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A public/build
+          if ! git diff --cached --quiet; then
+            git commit -m "Build production frontend assets [skip ci]"
+            git push
+          fi
