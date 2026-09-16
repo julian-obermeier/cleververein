@@ -92,7 +92,7 @@ class MemberController extends Controller
             $member = Member::query()->create([
                 'public_id' => Str::uuid(),
                 'person_id' => $person->id,
-                'member_number' => $data['member_number'] ?: null,
+                'member_number' => $data['member_number'] ?? null,
                 'status' => $data['status'],
                 'joined_at' => $data['joined_at'] ?? null,
                 'left_at' => $data['left_at'] ?? null,
@@ -106,7 +106,7 @@ class MemberController extends Controller
             if ($organization) {
                 $member->memberships()->create([
                     'organization_unit_id' => $organization->id,
-                    'membership_type' => $data['membership_type'] ?: 'Ordentliches Mitglied',
+                    'membership_type' => $data['membership_type'] ?? 'Ordentliches Mitglied',
                     'status' => $data['membership_status'],
                     'starts_at' => $data['membership_starts_at'] ?? $data['joined_at'] ?? null,
                     'ends_at' => $data['membership_ends_at'] ?? null,
@@ -163,7 +163,7 @@ class MemberController extends Controller
                 'contact_data' => $this->contactData($data),
             ]);
             $member->update([
-                'member_number' => $data['member_number'] ?: $member->member_number,
+                'member_number' => $data['member_number'] ?? $member->member_number,
                 'status' => $data['status'],
                 'joined_at' => $data['joined_at'] ?? null,
                 'left_at' => $data['left_at'] ?? null,
