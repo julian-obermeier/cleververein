@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.0 – Phase 2 Mitglieder und Organisation (in Umsetzung)
+
+- tenant-sichere Mitgliederverwaltung auf Basis zentraler Personen
+- Mitgliedsnummer, Status, Eintritt, Austritt, Kontaktdaten und interne Notizen
+- Mitgliedersuche und Filter nach Status sowie Organisationseinheit
+- Archivierung und Wiederherstellung von Mitgliedern
+- beliebig viele Mitgliedschaften pro Person und Gliederung
+- Standardtypen für Dach-, Bundes-, Landes-, Bezirks-, Kreis- und Ortsverbände sowie Vereine und Untergliederungen
+- frei definierbare zusätzliche Organisationstypen
+- Organisationsverwaltung mit Closure-Table-Hierarchie und sicherem Verschieben von Gliederungen
+- Phase-2-Rechte und Administratorrolle
+- echte Mitglieder- und Organisationskennzahlen im Dashboard
+- Navigation und globale Mitgliedersuche aktiviert
+- Featuretests für Mitgliederverwaltung und Organisationshierarchie
+
 ## 0.1.0 – Phase 1 Fundament
 
 - Laravel-13-Grundgerüst für PHP 8.4+
