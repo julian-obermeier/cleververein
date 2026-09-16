@@ -8,7 +8,7 @@
 | 4 Veranstaltungen und Kommunikation | Teilweise vorbereitet | Kommunikationshistorie je Mitglied vorhanden; Veranstaltungen und zentrale Kommunikation noch offen |
 | 5 Dokumentengenerator | Erster produktiver Funktionsblock | Mandantenfähige Vorlagen, visueller Editor, Platzhalter, PDF-Vorschau, private Ablage, Historie, Rechte und Featuretests vorhanden |
 | 6 Formulare und Workflows | Offen | – |
-| 7 Beiträge und Verwaltung | In Umsetzung, vierter produktiver Funktionsblock | Beiträge, Rechnungen, Finanzdokumente, SEPA, Bankabgleich, Journal, Belege, Kassenbuch, Abschlüsse, Periodensperren, Prüfungen und Berichte vorhanden |
+| 7 Beiträge und Verwaltung | In Umsetzung, fünfter produktiver Funktionsblock | Beiträge, Rechnungen, Finanzdokumente, SEPA, Bankabgleich, Journal, Belege, Kassenbuch, Abschlüsse, Periodensperren, Prüfungen, Rücklastschriften, Erstattungen, Spenden und Bescheinigungsworkflow vorhanden |
 | 8 SaaS-Ausbau | Offen | Tenant-Kern vorhanden, Tarif-/Aboverwaltung der SaaS-Plattform noch offen |
 | 9 Stabilisierung | Laufend | CI prüft Vite-Build, Pint und PHPUnit; vollständige Release-/Updateabnahme noch offen |
 
@@ -108,14 +108,23 @@ Bereits umgesetzt:
 - abgeschlossene Kassenzeiträume verhindern serverseitig nachträgliche Buchungen
 - globale Periodensperren mit protokollierter Wiederöffnung
 - dokumentierte Kassenprüfungen mit Prüfzeitraum, Buchungsanzahl, Soll-/Istbestand, Differenz und Feststellungen
-- eigene Rechte für Finanzbuchungen, Berichte, Belege, Kasse, Periodensperren und Kassenprüfung
+- Rücklastschriften und Erstattungen als unveränderliche Zahlungskorrekturen mit separaten Journalgegenbuchungen
+- optionale Rücklastschriftgebühren als getrennte Ausgabe
+- Erstattungen nur bei tatsächlich vorhandenem Rechnungsguthaben
+- Rechnungssalden berücksichtigen Zahlungskorrekturen und Gutschriften gemeinsam
+- eigenständige Zuwendungsverwaltung mit fortlaufender SP-Jahressequenz
+- automatische Spendenbuchung ins Finanzjournal; Aufwandsverzicht ohne künstlichen Geldfluss
+- steuerliche Stammdaten für Freistellungs-/Körperschaftsteuerbescheid oder § 60a AO
+- kontrollierte Freischaltung und Altersprüfung vor Ausstellung von Zuwendungsbestätigungen
+- unveränderliche Spender-, Empfänger- und Steuer-Snapshots je ausgestellter Bestätigung
+- private Zuwendungsbestätigungs-PDFs mit eigener ZB-Jahressequenz und nachvollziehbarem Storno
+- eigene Rechte für Finanzbuchungen, Berichte, Belege, Kasse, Periodensperren, Kassenprüfung, Zahlungskorrekturen und Spenden
 - Fresh-Install- und neue-Tenant-taugliche Initialisierung der Standardkonten/-kategorien
-- Tenant-Isolation, Audit-Logging und Featuretests für Journal, Belege und Kassenkontrollen
+- Tenant-Isolation, Audit-Logging und Featuretests für Journal, Belege, Kassenkontrollen, Zahlungskorrekturen und Spenden
 
 Nächste Ausbaustufen:
 
-- Rücklastschriften und Erstattungs-/Guthabenworkflow
 - CAMT-Import zusätzlich zum generischen Bank-CSV
 - Bank-spezifische SEPA-Validierung/XSD-Prüfung vor Export
-- Spenden/Zuwendungsbescheinigungen
+- Sammelbestätigungen für mehrere Zuwendungen
 - weitergehende Jahresberichte und Exporte für Steuerberatung/DATEV-nahe Weiterverarbeitung
