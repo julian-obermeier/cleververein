@@ -1,11 +1,16 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FunctionDirectoryController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\InstallController;
+use App\Http\Controllers\MemberBulkController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\MemberCrmController;
+use App\Http\Controllers\MemberSegmentController;
+use App\Http\Controllers\MemberSettingsController;
 use App\Http\Controllers\MemberSpreadsheetController;
 use App\Http\Controllers\MemberToolsController;
 use App\Http\Controllers\OrganizationController;
@@ -40,11 +45,22 @@ Route::middleware('installed')->group(function (): void {
         Route::get('/mitglieder', [MemberController::class, 'index'])->name('members.index');
         Route::get('/mitglieder/anlegen', [MemberController::class, 'create'])->name('members.create');
         Route::post('/mitglieder', [MemberController::class, 'store'])->name('members.store');
-        Route::get('/mitglieder/einstellungen', [MemberToolsController::class, 'settings'])->name('members.settings');
+        Route::post('/mitglieder/massenaktion', [MemberBulkController::class, 'apply'])->name('members.bulk');
+
+        Route::get('/mitglieder/einstellungen', MemberSettingsController::class)->name('members.settings');
         Route::post('/mitglieder/einstellungen/mitgliedsarten', [MemberToolsController::class, 'storeMemberType'])->name('members.types.store');
         Route::patch('/mitglieder/einstellungen/mitgliedsarten/{memberType}', [MemberToolsController::class, 'toggleMemberType'])->name('members.types.toggle');
         Route::post('/mitglieder/einstellungen/funktionen', [MemberToolsController::class, 'storeFunctionDefinition'])->name('members.functions.definitions.store');
         Route::patch('/mitglieder/einstellungen/funktionen/{function}', [MemberToolsController::class, 'toggleFunctionDefinition'])->name('members.functions.definitions.toggle');
+        Route::post('/mitglieder/einstellungen/zusatzfelder', [CustomFieldController::class, 'store'])->name('members.custom-fields.store');
+        Route::patch('/mitglieder/einstellungen/zusatzfelder/{field}', [CustomFieldController::class, 'toggle'])->name('members.custom-fields.toggle');
+        Route::post('/mitglieder/einstellungen/tags', [MemberCrmController::class, 'storeTag'])->name('members.tags.store');
+        Route::patch('/mitglieder/einstellungen/tags/{tag}', [MemberCrmController::class, 'toggleTag'])->name('members.tags.toggle');
+
+        Route::get('/mitglieder/segmente', [MemberSegmentController::class, 'index'])->name('members.segments.index');
+        Route::post('/mitglieder/segmente', [MemberSegmentController::class, 'store'])->name('members.segments.store');
+        Route::get('/mitglieder/segmente/{segment}', [MemberSegmentController::class, 'show'])->name('members.segments.show');
+        Route::patch('/mitglieder/segmente/{segment}', [MemberSegmentController::class, 'toggle'])->name('members.segments.toggle');
 
         Route::get('/mitglieder/funktionen', [FunctionDirectoryController::class, 'index'])->name('members.functions.index');
         Route::get('/mitglieder/haushalte', [HouseholdController::class, 'index'])->name('members.households.index');
@@ -59,6 +75,17 @@ Route::middleware('installed')->group(function (): void {
         Route::get('/mitglieder-export.xlsx', [MemberSpreadsheetController::class, 'export'])->name('members.export.xlsx');
         Route::get('/mitglieder-importvorlage.xlsx', [MemberSpreadsheetController::class, 'template'])->name('members.import.template.xlsx');
         Route::post('/mitglieder-import.xlsx', [MemberSpreadsheetController::class, 'import'])->name('members.import.xlsx');
+
+        Route::get('/mitglieder/{member}/crm', [MemberCrmController::class, 'dashboard'])->name('members.crm');
+        Route::put('/mitglieder/{member}/crm/zusatzfelder', [MemberCrmController::class, 'saveCustomFields'])->name('members.crm.custom-fields.update');
+        Route::post('/mitglieder/{member}/crm/tags', [MemberCrmController::class, 'assignTag'])->name('members.crm.tags.store');
+        Route::delete('/mitglieder/{member}/crm/tags/{tag}', [MemberCrmController::class, 'detachTag'])->name('members.crm.tags.destroy');
+        Route::post('/mitglieder/{member}/crm/dokumente', [MemberCrmController::class, 'storeDocument'])->name('members.crm.documents.store');
+        Route::get('/mitglieder/{member}/crm/dokumente/{document}/download', [MemberCrmController::class, 'downloadDocument'])->name('members.crm.documents.download');
+        Route::delete('/mitglieder/{member}/crm/dokumente/{document}', [MemberCrmController::class, 'destroyDocument'])->name('members.crm.documents.destroy');
+        Route::post('/mitglieder/{member}/crm/kommunikation', [MemberCrmController::class, 'storeCommunication'])->name('members.crm.communications.store');
+        Route::delete('/mitglieder/{member}/crm/kommunikation/{communication}', [MemberCrmController::class, 'destroyCommunication'])->name('members.crm.communications.destroy');
+        Route::get('/mitglieder/{member}/verlauf', [MemberCrmController::class, 'history'])->name('members.history');
 
         Route::get('/mitglieder/{member}', [MemberController::class, 'show'])->name('members.show');
         Route::get('/mitglieder/{member}/bearbeiten', [MemberController::class, 'edit'])->name('members.edit');
