@@ -4,7 +4,7 @@
 |---|---|---|
 | 1 Fundament | Lauffähiges Fundament | Architektur, Schema, Tenant-Kontext, Rechtebasis, Audit, Installer, Login und App-Shell vorhanden |
 | 2 Mitglieder und Organisation | Weit fortgeschritten | Mitglieder, Mehrfachmitgliedschaften, Mitgliedsarten, Haushalte, Ämter, CRM, Tags, Segmente, Zusatzfelder, Dokumente, Kommunikation, Im-/Export und Organisationsbaum vorhanden |
-| 3 Verbandsarbeit | Offen | – |
+| 3 Verbandsarbeit | Erster produktiver Funktionsblock | Gremien, Besetzungen, Sitzungen, Anwesenheit, Beschlussfähigkeit, Tagesordnungen, Anträge, Beschlüsse, Protokolle, Aufgaben und Beschlussregister vorhanden |
 | 4 Veranstaltungen und Kommunikation | Teilweise vorbereitet | Kommunikationshistorie je Mitglied vorhanden; Veranstaltungen und zentrale Kommunikation noch offen |
 | 5 Dokumentengenerator | Erster produktiver Funktionsblock | Mandantenfähige Vorlagen, visueller Editor, Platzhalter, PDF-Vorschau, private Ablage, Historie, Rechte und Featuretests vorhanden |
 | 6 Formulare und Workflows | Offen | – |
@@ -46,6 +46,39 @@ Noch offen innerhalb Phase 2 sind insbesondere:
 - weitergehende Organisationsstammdaten und Organisationsdetailseiten
 - komfortable Importvorschau mit frei konfigurierbarem Spaltenmapping und Fehlerprotokoll zum Download
 - weitergehende Auswertungen und Berichte
+
+## Phase 3 – Verbandsarbeit
+
+Bereits umgesetzt:
+
+- mandantenfähige Gremien für Vorstand, Ausschuss, Versammlung, Arbeitsgruppe, Beirat und weitere Typen
+- optionale Zuordnung eines Gremiums zu einer Organisationseinheit/Gliederung
+- historische Gremienbesetzung mit Mitglied, Rollenbezeichnung, Vorsitz, Stimmrecht und Amtszeit
+- Sitzungen mit Typ, Termin, Ort, Online-Link, Status und optionaler Beschlussfähigkeitsgrenze
+- automatische Übernahme aktiver Gremienmitglieder in neue Sitzungen
+- Teilnehmerverwaltung für Mitglieder und externe Gäste
+- Anwesenheitsstatus, Sitzungsleitung, Protokollführung und Stimmrecht
+- automatische serverseitige Ermittlung der Beschlussfähigkeit
+- strukturierte Tagesordnungen mit TOP-Nummer, Typ und geplanter Dauer
+- Anträge mit eigener transaktionssicherer AN-Jahressequenz
+- Beschlüsse mit eigener transaktionssicherer BE-Jahressequenz
+- Abstimmungsergebnisse als Summen ohne personenbezogene Einzelstimmen bei geheimer Abstimmung
+- Verknüpfung eines Beschlusses mit Antrag und Tagesordnungspunkt
+- Protokollworkflow Entwurf → Prüfung → verbindlich freigegeben
+- Schutz freigegebener Protokolle vor stiller nachträglicher Änderung
+- Aufgaben aus Sitzungen/Beschlüssen mit Zuständigkeit, Priorität, Frist und Status
+- zentrales Beschlussregister mit Suche und Filtern nach Ergebnis, Jahr und Gliederung
+- gliederungsbezogene Rechte `governance.view`, `governance.manage`, `governance.decisions` und `governance.minutes`
+- Audit-Logging aller relevanten Mutationen
+- Featuretests für Gremienworkflow, Beschlussfähigkeit, Antrag/Beschluss, Aufgaben, Protokollfreigabe und Tenant-Isolation
+
+Nächste Ausbaustufen innerhalb Phase 3:
+
+- Einladungen und Sitzungsunterlagen mit Versand-/Lesestatus
+- Wahlen und Wahlgänge mit Kandidaturen, Wahlberechtigten und Ergebnisprotokoll
+- Delegierten-/Stimmrechtsverwaltung für mehrstufige Verbände
+- Protokoll-PDFs und Beschlussauszüge über den Dokumentengenerator
+- Antragsfristen, Änderungsanträge und Versionierung
 
 ## Phase 5 – Dokumentengenerator
 
