@@ -3,9 +3,9 @@
         <div>
             <p class="text-sm font-semibold uppercase tracking-wide text-blue-700">Mitgliederverwaltung</p>
             <h1 class="mt-1 text-3xl font-bold tracking-tight">Stammdaten & Datenaustausch</h1>
-            <p class="mt-1 text-sm text-slate-500">Mitgliedsarten, Funktionen sowie CSV-Import und -Export zentral verwalten.</p>
+            <p class="mt-1 text-sm text-slate-500">Mitgliedsarten, Funktionen sowie CSV-/Excel-Import und -Export zentral verwalten.</p>
         </div>
-        <div class="flex gap-2"><a href="{{ route('members.index') }}" class="cv-button border border-slate-300 bg-white text-slate-700">Zur Mitgliederliste</a><a href="{{ route('members.export') }}" class="cv-button-primary">CSV exportieren</a></div>
+        <div class="flex flex-wrap gap-2"><a href="{{ route('members.index') }}" class="cv-button border border-slate-300 bg-white text-slate-700">Zur Mitgliederliste</a><a href="{{ route('members.export') }}" class="cv-button border border-slate-300 bg-white text-slate-700">CSV exportieren</a><a href="{{ route('members.export.xlsx') }}" class="cv-button-primary">Excel exportieren</a></div>
     </div>
 
     @if(session('success'))<div class="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('success') }}</div>@endif
@@ -26,8 +26,7 @@
         </section>
 
         <section class="cv-panel p-5">
-            <h2 class="text-lg font-bold">Ämter & Funktionen</h2>
-            <p class="mt-1 text-sm text-slate-500">Frei definierbarer Funktionskatalog für Vorstand, Abteilungen und weitere Ebenen.</p>
+            <div class="flex items-start justify-between gap-4"><div><h2 class="text-lg font-bold">Ämter & Funktionen</h2><p class="mt-1 text-sm text-slate-500">Frei definierbarer Funktionskatalog für Vorstand, Abteilungen und weitere Ebenen.</p></div><a href="{{ route('members.functions.index') }}" class="text-sm font-semibold text-blue-700">Besetzungen ansehen</a></div>
             <form method="post" action="{{ route('members.functions.definitions.store') }}" class="mt-5 grid gap-3 sm:grid-cols-2">@csrf
                 <label><span class="cv-label">Bezeichnung *</span><input required class="cv-input" name="name" placeholder="z. B. Jugendwart"></label>
                 <label><span class="cv-label">Kategorie</span><input class="cv-input" name="category" placeholder="z. B. Vorstand"></label>
@@ -40,13 +39,26 @@
         </section>
     </div>
 
-    <section class="cv-panel mt-5 p-5">
-        <div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-            <div><h2 class="text-lg font-bold">CSV-Import</h2><p class="mt-2 text-sm text-slate-500">Unterstützt Semikolon- und Komma-CSV. Pflichtspalten sind Vorname und Nachname. Bekannte Spalten: Mitgliedsnummer, E-Mail, Geburtsdatum, Status, Eintritt, Telefon, Mobil, Straße, PLZ, Ort. Mögliche Dubletten werden automatisch übersprungen.</p></div>
-            <form method="post" action="{{ route('members.import') }}" enctype="multipart/form-data" class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">@csrf
+    <div class="mt-5 grid gap-5 xl:grid-cols-2">
+        <section class="cv-panel p-5">
+            <div class="flex items-start justify-between gap-4"><div><h2 class="text-lg font-bold">CSV-Import</h2><p class="mt-2 text-sm text-slate-500">Unterstützt Semikolon- und Komma-CSV. Pflichtspalten sind Vorname und Nachname. Mögliche Dubletten werden automatisch übersprungen.</p></div><a href="{{ route('members.export') }}" class="text-sm font-semibold text-blue-700">CSV exportieren</a></div>
+            <form method="post" action="{{ route('members.import') }}" enctype="multipart/form-data" class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">@csrf
                 <label><span class="cv-label">CSV-Datei *</span><input required type="file" accept=".csv,.txt,text/csv" class="cv-input bg-white" name="file"></label>
-                <div class="mt-4 flex justify-end"><button class="cv-button-primary">Import starten</button></div>
+                <div class="mt-4 flex justify-end"><button class="cv-button-primary">CSV importieren</button></div>
             </form>
-        </div>
+        </section>
+
+        <section class="cv-panel p-5">
+            <div class="flex items-start justify-between gap-4"><div><h2 class="text-lg font-bold">Excel-Import</h2><p class="mt-2 text-sm text-slate-500">Für umfangreichere Datenmigrationen. Unterstützt XLSX/XLS mit derselben Spaltenstruktur wie der Export.</p></div><a href="{{ route('members.import.template.xlsx') }}" class="text-sm font-semibold text-blue-700">Importvorlage</a></div>
+            <form method="post" action="{{ route('members.import.xlsx') }}" enctype="multipart/form-data" class="mt-5 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">@csrf
+                <label><span class="cv-label">Excel-Datei *</span><input required type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="cv-input bg-white" name="file"></label>
+                <div class="mt-4 flex items-center justify-between gap-3"><a href="{{ route('members.export.xlsx') }}" class="text-sm font-semibold text-slate-600">Excel exportieren</a><button class="cv-button-primary">Excel importieren</button></div>
+            </form>
+        </section>
+    </div>
+
+    <section class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-5 text-sm text-blue-900">
+        <h2 class="font-bold">Unterstützte Spalten</h2>
+        <p class="mt-1">Mitgliedsnummer, Vorname, Nachname, E-Mail, Geburtsdatum, Status, Eintritt, Organisation, Mitgliedsart, Telefon, Mobil, Straße, PLZ und Ort. Datumswerte können als <code>YYYY-MM-DD</code> oder <code>TT.MM.JJJJ</code> angegeben werden.</p>
     </section>
 </x-layouts.app>
