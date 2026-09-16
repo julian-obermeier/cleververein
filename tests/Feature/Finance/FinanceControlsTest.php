@@ -4,7 +4,6 @@ namespace Tests\Feature\Finance;
 
 use App\Models\FinanceAccount;
 use App\Models\FinanceCashAudit;
-use App\Models\FinanceCashClosing;
 use App\Models\FinanceCategory;
 use App\Models\FinanceEntry;
 use App\Models\FinancePeriodLock;
