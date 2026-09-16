@@ -3,8 +3,10 @@
 namespace Tests\Feature\Members;
 
 use App\Models\Member;
+use App\Models\Person;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -50,13 +52,13 @@ class MemberManagementTest extends TestCase
         [$tenantA, $user] = $this->tenantUser('Mandant A', 'mandant-a');
         $tenantB = Tenant::query()->create(['public_id' => Str::uuid(), 'name' => 'Mandant B', 'slug' => 'mandant-b', 'status' => 'active']);
 
-        app(\App\Support\Tenancy\TenantContext::class)->set($tenantA);
-        $personA = \App\Models\Person::factory()->create(['first_name' => 'Anna', 'last_name' => 'Alpha']);
+        app(TenantContext::class)->set($tenantA);
+        $personA = Person::factory()->create(['first_name' => 'Anna', 'last_name' => 'Alpha']);
         Member::query()->create(['public_id' => Str::uuid(), 'person_id' => $personA->id, 'member_number' => 'A-1', 'status' => 'active']);
-        app(\App\Support\Tenancy\TenantContext::class)->set($tenantB);
-        $personB = \App\Models\Person::factory()->create(['first_name' => 'Bernd', 'last_name' => 'Beta']);
+        app(TenantContext::class)->set($tenantB);
+        $personB = Person::factory()->create(['first_name' => 'Bernd', 'last_name' => 'Beta']);
         Member::query()->create(['public_id' => Str::uuid(), 'person_id' => $personB->id, 'member_number' => 'B-1', 'status' => 'active']);
-        app(\App\Support\Tenancy\TenantContext::class)->clear();
+        app(TenantContext::class)->clear();
 
         $this->actingAs($user)->get(route('members.index'))
             ->assertOk()
