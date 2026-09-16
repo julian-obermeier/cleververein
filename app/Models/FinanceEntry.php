@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FinanceEntry extends Model
 {
@@ -71,5 +72,10 @@ class FinanceEntry extends Model
     public function reversalOf(): BelongsTo
     {
         return $this->belongsTo(self::class, 'reversal_of_id');
+    }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(FinanceReceipt::class, 'finance_entry_id');
     }
 }
