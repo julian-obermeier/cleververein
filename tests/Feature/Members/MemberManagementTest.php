@@ -33,8 +33,8 @@ class MemberManagementTest extends TestCase
 
         $this->actingAs($user)->get(route('members.create'))
             ->assertOk()
-            ->assertSee('Person & Kontakt')
-            ->assertSee('Mitgliedsdaten');
+            ->assertSeeText('Person & Kontakt')
+            ->assertSeeText('Mitgliedsdaten');
     }
 
     public function test_super_admin_can_create_member_in_current_tenant(): void
