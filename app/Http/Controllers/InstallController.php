@@ -86,7 +86,7 @@ class InstallController extends Controller
             $tenant->users()->attach($user->id, ['status' => 'active']);
             $this->provisionTenantDefaults($tenant->id, $user->id);
         });
-        file_put_contents(storage_path('app/installed'), json_encode(['version' => '0.7.0', 'installed_at' => now()->toIso8601String()], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
+        file_put_contents(storage_path('app/installed'), json_encode(['version' => '0.8.0', 'installed_at' => now()->toIso8601String()], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
 
         return redirect()->route('install.show', 'finish');
     }
