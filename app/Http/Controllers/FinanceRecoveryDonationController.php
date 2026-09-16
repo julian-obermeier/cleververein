@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankTransaction;
 use App\Models\FinanceAccount;
 use App\Models\FinanceDonation;
 use App\Models\FinanceDonationCertificate;
@@ -88,6 +89,9 @@ class FinanceRecoveryDonationController extends Controller
             'reference' => ['nullable', 'string', 'max:180'],
             'bank_transaction_id' => ['nullable', 'integer'],
         ]);
+        if (! empty($data['bank_transaction_id'])) {
+            BankTransaction::query()->findOrFail($data['bank_transaction_id']);
+        }
         $adjustment = $this->recovery->adjustPayment($payment, $data, $request->user()->id);
         $this->audit->record('finance.payment_adjusted', $adjustment, new: $adjustment->only([
             'finance_payment_id', 'finance_invoice_id', 'type', 'amount', 'fee_amount', 'adjustment_date', 'reason',
@@ -121,6 +125,9 @@ class FinanceRecoveryDonationController extends Controller
         }
         if (! empty($data['finance_account_id'])) {
             FinanceAccount::query()->where('is_active', true)->findOrFail($data['finance_account_id']);
+        }
+        if (! empty($data['bank_transaction_id'])) {
+            BankTransaction::query()->findOrFail($data['bank_transaction_id']);
         }
         $donation = $this->recovery->createDonation($data, $request->user()->id);
         $this->audit->record('finance.donation_created', $donation, new: $donation->only([
