@@ -1,7 +1,8 @@
 @php
-    $person = $member->person ?? null;
+    $member = $member ?? null;
+    $person = $member?->person;
     $contact = $person?->contact_data ?? [];
-    $meta = isset($member) ? ($member->meta ?? []) : [];
+    $meta = $member?->meta ?? [];
 @endphp
 
 @if($errors->any())
@@ -40,16 +41,16 @@
     <section class="cv-panel p-5">
         <h2 class="text-lg font-bold">Mitgliedsdaten</h2>
         <div class="mt-5 grid gap-4 sm:grid-cols-2">
-            <label><span class="cv-label">Mitgliedsnummer</span><input class="cv-input" name="member_number" value="{{ old('member_number', $member->member_number ?? '') }}" placeholder="wird sonst automatisch vergeben"></label>
-            <label><span class="cv-label">Status *</span><select required class="cv-input" name="status">@foreach(['active'=>'Aktiv','pending'=>'Vorgemerkt','inactive'=>'Inaktiv','resigned'=>'Ausgetreten','deceased'=>'Verstorben'] as $value=>$label)<option value="{{ $value }}" @selected(old('status', $member->status ?? 'active') === $value)>{{ $label }}</option>@endforeach</select></label>
-            <label><span class="cv-label">Eintritt</span><input type="date" class="cv-input" name="joined_at" value="{{ old('joined_at', isset($member) ? $member->joined_at?->format('Y-m-d') : now()->format('Y-m-d')) }}"></label>
-            <label><span class="cv-label">Austritt</span><input type="date" class="cv-input" name="left_at" value="{{ old('left_at', $member->left_at?->format('Y-m-d') ?? '') }}"></label>
+            <label><span class="cv-label">Mitgliedsnummer</span><input class="cv-input" name="member_number" value="{{ old('member_number', $member?->member_number ?? '') }}" placeholder="wird sonst automatisch vergeben"></label>
+            <label><span class="cv-label">Status *</span><select required class="cv-input" name="status">@foreach(['active'=>'Aktiv','pending'=>'Vorgemerkt','inactive'=>'Inaktiv','resigned'=>'Ausgetreten','deceased'=>'Verstorben'] as $value=>$label)<option value="{{ $value }}" @selected(old('status', $member?->status ?? 'active') === $value)>{{ $label }}</option>@endforeach</select></label>
+            <label><span class="cv-label">Eintritt</span><input type="date" class="cv-input" name="joined_at" value="{{ old('joined_at', $member ? $member->joined_at?->format('Y-m-d') : now()->format('Y-m-d')) }}"></label>
+            <label><span class="cv-label">Austritt</span><input type="date" class="cv-input" name="left_at" value="{{ old('left_at', $member?->left_at?->format('Y-m-d') ?? '') }}"></label>
             <label class="sm:col-span-2"><span class="cv-label">Schlagworte</span><input class="cv-input" name="tags" value="{{ old('tags', implode(', ', $meta['tags'] ?? [])) }}" placeholder="z. B. Trainer, Jubiläum, Datenschutz"></label>
             <label class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-3"><input type="checkbox" name="newsletter" value="1" @checked(old('newsletter', $meta['newsletter'] ?? false))><span class="text-sm font-medium">Newsletter / Rundmails erlaubt</span></label>
             @if($includeInitialMembership ?? false)
                 <label class="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3"><input type="checkbox" name="force_duplicate" value="1" @checked(old('force_duplicate'))><span class="text-sm font-medium text-amber-900">Trotz Dublettenwarnung anlegen</span></label>
             @endif
-            <label class="sm:col-span-2"><span class="cv-label">Interne Notizen</span><textarea class="cv-input min-h-28 py-3" name="notes">{{ old('notes', $member->notes ?? '') }}</textarea></label>
+            <label class="sm:col-span-2"><span class="cv-label">Interne Notizen</span><textarea class="cv-input min-h-28 py-3" name="notes">{{ old('notes', $member?->notes ?? '') }}</textarea></label>
         </div>
     </section>
 </div>
