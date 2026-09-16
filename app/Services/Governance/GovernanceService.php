@@ -39,7 +39,11 @@ class GovernanceService
     public function recalculateQuorum(GovernanceMeeting $meeting): GovernanceMeeting
     {
         if ($meeting->quorum_required === null) {
-            return $meeting;
+            if ($meeting->quorum_met !== null) {
+                $meeting->update(['quorum_met' => null]);
+            }
+
+            return $meeting->fresh();
         }
 
         $presentVoting = $meeting->participants()
@@ -98,7 +102,7 @@ class GovernanceService
                 'created_by' => $userId,
             ]);
 
-            if ($resolution->motion_id) {
+            if ($resolution->motion_id && in_array($resolution->decision_status, ['passed', 'rejected'], true)) {
                 GovernanceMotion::query()->whereKey($resolution->motion_id)->update([
                     'status' => $resolution->decision_status === 'passed' ? 'accepted' : 'rejected',
                 ]);
