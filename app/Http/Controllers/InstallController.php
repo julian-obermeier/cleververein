@@ -86,7 +86,7 @@ class InstallController extends Controller
             $tenant->users()->attach($user->id, ['status' => 'active']);
             $this->provisionTenantDefaults($tenant->id, $user->id);
         });
-        file_put_contents(storage_path('app/installed'), json_encode(['version' => '0.1.0', 'installed_at' => now()->toIso8601String()], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
+        file_put_contents(storage_path('app/installed'), json_encode(['version' => '0.2.0', 'installed_at' => now()->toIso8601String()], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
 
         return redirect()->route('install.show', 'finish');
     }
@@ -111,6 +111,32 @@ class InstallController extends Controller
             );
         }
 
+        foreach ([
+            ['name' => 'Ordentliches Mitglied', 'code' => 'ORDENTLICH', 'sort_order' => 10],
+            ['name' => 'Jugendmitglied', 'code' => 'JUGEND', 'sort_order' => 20],
+            ['name' => 'Fördermitglied', 'code' => 'FOERDER', 'sort_order' => 30],
+            ['name' => 'Passives Mitglied', 'code' => 'PASSIV', 'sort_order' => 40],
+            ['name' => 'Ehrenmitglied', 'code' => 'EHRE', 'sort_order' => 50],
+        ] as $memberType) {
+            DB::table('member_types')->updateOrInsert(
+                ['tenant_id' => $tenantId, 'name' => $memberType['name']],
+                [...$memberType, 'description' => null, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
+
+        foreach ([
+            ['name' => 'Vorsitz', 'code' => 'VORSITZ', 'category' => 'Vorstand', 'sort_order' => 10],
+            ['name' => 'Stellvertretender Vorsitz', 'code' => 'STV_VORSITZ', 'category' => 'Vorstand', 'sort_order' => 20],
+            ['name' => 'Kassenführung', 'code' => 'KASSE', 'category' => 'Vorstand', 'sort_order' => 30],
+            ['name' => 'Schriftführung', 'code' => 'SCHRIFT', 'category' => 'Vorstand', 'sort_order' => 40],
+            ['name' => 'Beisitz', 'code' => 'BEISITZ', 'category' => 'Vorstand', 'sort_order' => 50],
+        ] as $function) {
+            DB::table('function_definitions')->updateOrInsert(
+                ['tenant_id' => $tenantId, 'name' => $function['name']],
+                [...$function, 'description' => null, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
+
         DB::table('roles')->updateOrInsert(
             ['tenant_id' => $tenantId, 'slug' => 'administrator'],
             ['name' => 'Administrator', 'is_system' => true, 'created_at' => now(), 'updated_at' => now()],
@@ -118,6 +144,7 @@ class InstallController extends Controller
         $roleId = DB::table('roles')->where('tenant_id', $tenantId)->where('slug', 'administrator')->value('id');
         $permissionIds = DB::table('permissions')->whereIn('key', [
             'members.view', 'members.create', 'members.update', 'members.archive', 'members.memberships',
+            'members.master_data', 'members.households', 'members.functions', 'members.import_export',
             'organization.view', 'organization.manage',
         ])->pluck('id');
         foreach ($permissionIds as $permissionId) {
