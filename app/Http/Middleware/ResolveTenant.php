@@ -19,7 +19,8 @@ class ResolveTenant
         abort_unless($user, 401);
 
         $tenantId = (int) ($request->session()->get('tenant_id') ?: $user->current_tenant_id);
-        $supportMode = $user->is_super_admin && $request->session()->boolean('support_mode');
+        $supportMode = $user->is_super_admin
+            && filter_var($request->session()->get('support_mode', false), FILTER_VALIDATE_BOOL);
 
         $tenant = $supportMode
             ? Tenant::query()->find($tenantId)
