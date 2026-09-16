@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\GovernanceController;
+use App\Http\Controllers\GovernanceResolutionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['installed', 'auth', 'verified', 'tenant'])->group(function (): void {
     Route::get('/gremien', [GovernanceController::class, 'index'])->name('governance.index');
+    Route::get('/beschluesse', GovernanceResolutionController::class)->name('governance.resolutions.index');
     Route::post('/gremien', [GovernanceController::class, 'storeCommittee'])->name('governance.committees.store');
     Route::get('/gremien/{committee}', [GovernanceController::class, 'showCommittee'])->name('governance.committees.show');
     Route::post('/gremien/{committee}/mitglieder', [GovernanceController::class, 'addCommitteeMember'])->name('governance.committees.members.store');
