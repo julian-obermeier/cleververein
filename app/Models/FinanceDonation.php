@@ -59,6 +59,11 @@ class FinanceDonation extends Model
         return $this->hasMany(FinanceDonationCertificate::class, 'finance_donation_id');
     }
 
+    public function collectiveItems(): HasMany
+    {
+        return $this->hasMany(FinanceDonationCollectiveItem::class, 'finance_donation_id');
+    }
+
     public function getActiveCertificateAttribute(): ?FinanceDonationCertificate
     {
         if ($this->relationLoaded('certificates')) {
