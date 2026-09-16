@@ -64,7 +64,7 @@ class FinanceRecoveryDonationTest extends TestCase
 
     public function test_refund_requires_real_credit_and_preserves_paid_status_after_credit_note(): void
     {
-        [, $user] = $this->tenantUser();
+        [$tenant, $user] = $this->tenantUser();
         $member = $this->member('M-801');
         [$invoice, $payment] = $this->paidInvoice($member, $user, 100);
 
@@ -77,6 +77,7 @@ class FinanceRecoveryDonationTest extends TestCase
         ])->assertSessionHasErrors('amount');
         $this->assertDatabaseCount('finance_payment_adjustments', 0);
 
+        app(TenantContext::class)->set($tenant);
         app(FinanceService::class)->createCreditNote($invoice->fresh(), 20, 'Teilweise Beitragsminderung', $user->id, false);
 
         $this->actingAs($user)->post(route('finance.payment-adjustments.store', $payment), [
