@@ -71,4 +71,24 @@ class Member extends Model
     {
         return $this->hasMany(MemberCommunication::class);
     }
+
+    public function contributionOverrides(): HasMany
+    {
+        return $this->hasMany(ContributionOverride::class);
+    }
+
+    public function sepaMandates(): HasMany
+    {
+        return $this->hasMany(SepaMandate::class);
+    }
+
+    public function financeInvoices(): HasMany
+    {
+        return $this->hasMany(FinanceInvoice::class);
+    }
+
+    public function financePayments(): HasMany
+    {
+        return $this->hasMany(FinancePayment::class);
+    }
 }
