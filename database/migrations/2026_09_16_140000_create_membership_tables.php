@@ -67,6 +67,61 @@ return new class extends Migration
                 [...$permission, 'updated_at' => now(), 'created_at' => now()],
             );
         }
+
+        $defaultTypes = [
+            ['name' => 'Dachverband', 'slug' => 'dachverband', 'sort_order' => 10],
+            ['name' => 'Bundesverband', 'slug' => 'bundesverband', 'sort_order' => 20],
+            ['name' => 'Landesverband', 'slug' => 'landesverband', 'sort_order' => 30],
+            ['name' => 'Bezirksverband', 'slug' => 'bezirksverband', 'sort_order' => 40],
+            ['name' => 'Kreisverband', 'slug' => 'kreisverband', 'sort_order' => 50],
+            ['name' => 'Ortsverband', 'slug' => 'ortsverband', 'sort_order' => 60],
+            ['name' => 'Verein', 'slug' => 'verein', 'sort_order' => 70],
+            ['name' => 'Abteilung / Sparte', 'slug' => 'abteilung-sparte', 'sort_order' => 80],
+            ['name' => 'Gruppe', 'slug' => 'gruppe', 'sort_order' => 90],
+        ];
+
+        $permissionIds = DB::table('permissions')->whereIn('key', array_column($permissions, 'key'))->pluck('id');
+        foreach (DB::table('tenants')->pluck('id') as $tenantId) {
+            foreach ($defaultTypes as $type) {
+                DB::table('organization_types')->updateOrInsert(
+                    ['tenant_id' => $tenantId, 'slug' => $type['slug']],
+                    [...$type, 'is_active' => true, 'updated_at' => now(), 'created_at' => now()],
+                );
+            }
+
+            DB::table('roles')->updateOrInsert(
+                ['tenant_id' => $tenantId, 'slug' => 'administrator'],
+                ['name' => 'Administrator', 'is_system' => true, 'updated_at' => now(), 'created_at' => now()],
+            );
+            $roleId = DB::table('roles')->where('tenant_id', $tenantId)->where('slug', 'administrator')->value('id');
+            foreach ($permissionIds as $permissionId) {
+                DB::table('permission_role')->insertOrIgnore(['permission_id' => $permissionId, 'role_id' => $roleId]);
+            }
+
+            $superAdminIds = DB::table('tenant_user')
+                ->join('users', 'users.id', '=', 'tenant_user.user_id')
+                ->where('tenant_user.tenant_id', $tenantId)
+                ->where('tenant_user.status', 'active')
+                ->where('users.is_super_admin', true)
+                ->pluck('users.id');
+            foreach ($superAdminIds as $userId) {
+                if (! DB::table('role_assignments')->where('tenant_id', $tenantId)->where('user_id', $userId)->where('role_id', $roleId)->whereNull('organization_unit_id')->exists()) {
+                    DB::table('role_assignments')->insert([
+                        'tenant_id' => $tenantId,
+                        'user_id' => $userId,
+                        'role_id' => $roleId,
+                        'organization_unit_id' => null,
+                        'scope' => 'organization',
+                        'include_descendants' => true,
+                        'valid_from' => null,
+                        'valid_until' => null,
+                        'granted_by' => null,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
     }
 
     public function down(): void
