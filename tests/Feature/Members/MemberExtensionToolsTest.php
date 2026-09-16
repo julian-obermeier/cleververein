@@ -61,7 +61,7 @@ class MemberExtensionToolsTest extends TestCase
 
         $this->actingAs($user)->get(route('members.functions.index'))
             ->assertOk()
-            ->assertSee('Ämter &amp; Funktionen', false);
+            ->assertSeeText('Ämter & Funktionen');
     }
 
     public function test_super_admin_can_download_xlsx_export(): void
