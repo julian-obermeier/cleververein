@@ -34,6 +34,9 @@
                         <label><span class="cv-label">Status *</span><select class="cv-input" name="status"><option value="active">Aktiv</option><option value="planned">Geplant</option><option value="inactive">Inaktiv</option></select></label>
                         <label><span class="cv-label">Gründungsdatum</span><input type="date" class="cv-input" name="founded_at"></label>
                     </div>
+                    <div class="grid gap-4 sm:grid-cols-2"><label><span class="cv-label">E-Mail</span><input type="email" class="cv-input" name="email"></label><label><span class="cv-label">Telefon</span><input class="cv-input" name="phone"></label></div>
+                    <label><span class="cv-label">Straße / Hausnummer</span><input class="cv-input" name="street"></label>
+                    <div class="grid gap-4 sm:grid-cols-[120px_1fr]"><label><span class="cv-label">PLZ</span><input class="cv-input" name="postal_code"></label><label><span class="cv-label">Ort</span><input class="cv-input" name="city"></label></div>
                     <div class="flex justify-end"><button class="cv-button-primary">Einheit anlegen</button></div>
                 </form>
             </section>
@@ -44,6 +47,7 @@
             <div class="divide-y divide-slate-100">
                 @forelse($rows as $row)
                     @php($unit = $row['unit'])
+                    @php($contact = $unit->contact_data ?? [])
                     <details class="group">
                         <summary class="flex cursor-pointer list-none items-center gap-3 px-5 py-4 hover:bg-slate-50">
                             <span class="text-slate-400 transition group-open:rotate-90">›</span>
@@ -60,6 +64,11 @@
                                 <label><span class="cv-label">Kurzname</span><input class="cv-input" name="short_name" value="{{ $unit->short_name }}"></label>
                                 <label><span class="cv-label">Status</span><select class="cv-input" name="status"><option value="active" @selected($unit->status==='active')>Aktiv</option><option value="planned" @selected($unit->status==='planned')>Geplant</option><option value="inactive" @selected($unit->status==='inactive')>Inaktiv</option></select></label>
                                 <label><span class="cv-label">Gründungsdatum</span><input type="date" class="cv-input" name="founded_at" value="{{ $unit->founded_at?->format('Y-m-d') }}"></label>
+                                <label><span class="cv-label">E-Mail</span><input type="email" class="cv-input" name="email" value="{{ $contact['email'] ?? '' }}"></label>
+                                <label><span class="cv-label">Telefon</span><input class="cv-input" name="phone" value="{{ $contact['phone'] ?? '' }}"></label>
+                                <label class="lg:col-span-2"><span class="cv-label">Straße / Hausnummer</span><input class="cv-input" name="street" value="{{ $contact['street'] ?? '' }}"></label>
+                                <label><span class="cv-label">PLZ</span><input class="cv-input" name="postal_code" value="{{ $contact['postal_code'] ?? '' }}"></label>
+                                <label><span class="cv-label">Ort</span><input class="cv-input" name="city" value="{{ $contact['city'] ?? '' }}"></label>
                                 <input type="hidden" name="dissolved_at" value="{{ $unit->dissolved_at?->format('Y-m-d') }}">
                                 <div class="lg:col-span-2 flex flex-wrap justify-end gap-2"><button class="cv-button-primary">Änderungen speichern</button></div>
                             </form>
