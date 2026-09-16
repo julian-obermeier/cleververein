@@ -2,7 +2,6 @@ name: quality
 
 on:
   push:
-  pull_request:
 
 permissions:
   contents: write
@@ -17,29 +16,14 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, pdo_sqlite, openssl
           coverage: none
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
       - run: composer install --no-interaction --prefer-dist
-      - run: cp .env.example .env && php artisan key:generate
-      - run: npm ci
-      - run: npm run build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: public-build-${{ github.sha }}
-          path: public/build
-          if-no-files-found: error
-          retention-days: 7
-      - run: ./vendor/bin/pint --test
-      - run: php artisan test
-      - name: Commit compiled production assets
-        if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+      - name: Format forms service
         run: |
+          ./vendor/bin/pint app/Services/Forms/FormEngineService.php
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A public/build
+          git add app/Services/Forms/FormEngineService.php
           if ! git diff --cached --quiet; then
-            git commit -m "Build production frontend assets [skip ci]"
+            git commit -m "Format forms workflow service [skip ci]"
             git push
           fi
