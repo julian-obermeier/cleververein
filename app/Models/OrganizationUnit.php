@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrganizationUnit extends Model
@@ -16,9 +17,24 @@ class OrganizationUnit extends Model
 
     protected $casts = ['founded_at' => 'date', 'dissolved_at' => 'date', 'contact_data' => 'array', 'registry_data' => 'array', 'settings' => 'array'];
 
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationType::class, 'organization_type_id');
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')->orderBy('name');
+    }
+
+    public function memberships(): HasMany
+    {
+        return $this->hasMany(Membership::class);
     }
 
     public function descendants(): BelongsToMany
