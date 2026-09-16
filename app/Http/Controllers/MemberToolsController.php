@@ -17,6 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
@@ -48,10 +49,12 @@ class MemberToolsController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
         ]);
+        $code = filled($data['code'] ?? null) ? Str::upper(Str::slug($data['code'], '_')) : null;
+        $this->ensureMasterDataUnique(MemberType::class, $data['name'], $code, 'Mitgliedsart');
 
         $type = MemberType::query()->create([
             ...$data,
-            'code' => filled($data['code'] ?? null) ? Str::upper(Str::slug($data['code'], '_')) : null,
+            'code' => $code,
             'sort_order' => $data['sort_order'] ?? 0,
             'is_active' => true,
         ]);
@@ -79,10 +82,12 @@ class MemberToolsController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
         ]);
+        $code = filled($data['code'] ?? null) ? Str::upper(Str::slug($data['code'], '_')) : null;
+        $this->ensureMasterDataUnique(FunctionDefinition::class, $data['name'], $code, 'Funktion');
 
         $function = FunctionDefinition::query()->create([
             ...$data,
-            'code' => filled($data['code'] ?? null) ? Str::upper(Str::slug($data['code'], '_')) : null,
+            'code' => $code,
             'sort_order' => $data['sort_order'] ?? 0,
             'is_active' => true,
         ]);
@@ -169,6 +174,7 @@ class MemberToolsController extends Controller
     public function detachHousehold(Request $request, Member $member, Household $household): RedirectResponse
     {
         $this->authorizePermission($request, 'members.households');
+        abort_unless($household->members()->whereKey($member->id)->exists(), 404);
         $household->members()->detach($member->id);
         $this->audit->record('household.member_removed', $household, old: ['member_id' => $member->id]);
 
@@ -287,8 +293,17 @@ class MemberToolsController extends Controller
 
             $organizationName = trim((string) ($values['organization'] ?? ''));
             $memberTypeName = trim((string) ($values['member_type'] ?? ''));
-            $organization = $organizationName !== '' ? OrganizationUnit::query()->where('name', $organizationName)->first() : null;
-            $memberType = $memberTypeName !== '' ? MemberType::query()->where('name', $memberTypeName)->first() : null;
+            $organization = $organizationName !== ''
+                ? OrganizationUnit::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($organizationName)])->first()
+                : null;
+            if ($organizationName !== '' && ! $organization) {
+                $errors++;
+
+                continue;
+            }
+            $memberType = $memberTypeName !== ''
+                ? MemberType::query()->whereRaw('LOWER(name) = ?', [mb_strtolower($memberTypeName)])->first()
+                : null;
             $status = $this->normalizeMemberStatus((string) ($values['status'] ?? ''));
 
             try {
@@ -406,6 +421,18 @@ class MemberToolsController extends Controller
             'ort', 'city' => 'city',
             default => Str::snake($header),
         };
+    }
+
+    private function ensureMasterDataUnique(string $modelClass, string $name, ?string $code, string $label): void
+    {
+        $nameExists = $modelClass::query()->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($name))])->exists();
+        if ($nameExists) {
+            throw ValidationException::withMessages(['name' => "{$label} mit diesem Namen existiert bereits."]);
+        }
+
+        if ($code && $modelClass::query()->where('code', $code)->exists()) {
+            throw ValidationException::withMessages(['code' => "{$label} mit diesem Code existiert bereits."]);
+        }
     }
 
     private function authorizePermission(Request $request, string $permission, ?int $organizationId = null): void
