@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\MemberToolsController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\VerifyEmailController;
@@ -36,6 +37,13 @@ Route::middleware('installed')->group(function (): void {
         Route::get('/mitglieder', [MemberController::class, 'index'])->name('members.index');
         Route::get('/mitglieder/anlegen', [MemberController::class, 'create'])->name('members.create');
         Route::post('/mitglieder', [MemberController::class, 'store'])->name('members.store');
+        Route::get('/mitglieder/einstellungen', [MemberToolsController::class, 'settings'])->name('members.settings');
+        Route::post('/mitglieder/einstellungen/mitgliedsarten', [MemberToolsController::class, 'storeMemberType'])->name('members.types.store');
+        Route::patch('/mitglieder/einstellungen/mitgliedsarten/{memberType}', [MemberToolsController::class, 'toggleMemberType'])->name('members.types.toggle');
+        Route::post('/mitglieder/einstellungen/funktionen', [MemberToolsController::class, 'storeFunctionDefinition'])->name('members.functions.definitions.store');
+        Route::patch('/mitglieder/einstellungen/funktionen/{function}', [MemberToolsController::class, 'toggleFunctionDefinition'])->name('members.functions.definitions.toggle');
+        Route::get('/mitglieder-export.csv', [MemberToolsController::class, 'export'])->name('members.export');
+        Route::post('/mitglieder-import', [MemberToolsController::class, 'import'])->name('members.import');
         Route::get('/mitglieder/{member}', [MemberController::class, 'show'])->name('members.show');
         Route::get('/mitglieder/{member}/bearbeiten', [MemberController::class, 'edit'])->name('members.edit');
         Route::put('/mitglieder/{member}', [MemberController::class, 'update'])->name('members.update');
@@ -43,6 +51,10 @@ Route::middleware('installed')->group(function (): void {
         Route::post('/mitglieder/{member}/wiederherstellen', [MemberController::class, 'restore'])->whereNumber('member')->name('members.restore');
         Route::post('/mitglieder/{member}/mitgliedschaften', [MemberController::class, 'storeMembership'])->name('members.memberships.store');
         Route::delete('/mitglieder/{member}/mitgliedschaften/{membership}', [MemberController::class, 'destroyMembership'])->name('members.memberships.destroy');
+        Route::post('/mitglieder/{member}/funktionen', [MemberToolsController::class, 'storeFunctionAssignment'])->name('members.functions.store');
+        Route::delete('/mitglieder/{member}/funktionen/{assignment}', [MemberToolsController::class, 'destroyFunctionAssignment'])->name('members.functions.destroy');
+        Route::post('/mitglieder/{member}/haushalte', [MemberToolsController::class, 'storeHousehold'])->name('members.households.store');
+        Route::delete('/mitglieder/{member}/haushalte/{household}', [MemberToolsController::class, 'detachHousehold'])->name('members.households.destroy');
 
         Route::get('/organisation', [OrganizationController::class, 'index'])->name('organization.index');
         Route::post('/organisation/typen', [OrganizationController::class, 'storeType'])->name('organization.types.store');
