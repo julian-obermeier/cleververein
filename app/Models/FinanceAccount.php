@@ -12,7 +12,7 @@ class FinanceAccount extends Model
     use BelongsToTenant, SoftDeletes;
 
     protected $fillable = [
-        'name', 'code', 'type', 'currency', 'opening_balance', 'is_default', 'is_active', 'sort_order',
+        'name', 'code', 'type', 'currency', 'opening_balance', 'is_default', 'is_active', 'sort_order', 'datev_account',
     ];
 
     protected $casts = [
