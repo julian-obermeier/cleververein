@@ -12,7 +12,7 @@ class FinanceCategory extends Model
     use BelongsToTenant, SoftDeletes;
 
     protected $fillable = [
-        'name', 'code', 'direction', 'default_tax_rate', 'is_active', 'sort_order',
+        'name', 'code', 'direction', 'default_tax_rate', 'is_active', 'sort_order', 'datev_account',
     ];
 
     protected $casts = [
