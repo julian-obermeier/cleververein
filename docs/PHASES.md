@@ -5,7 +5,7 @@
 | 1 Fundament | Lauffähiges Fundament | Architektur, Schema, Tenant-Kontext, Rechtebasis, Audit, Installer, Login und App-Shell vorhanden |
 | 2 Mitglieder und Organisation | Weit fortgeschritten | Mitglieder, Mehrfachmitgliedschaften, Mitgliedsarten, Haushalte, Ämter, CRM, Tags, Segmente, Zusatzfelder, Dokumente, Kommunikation, Im-/Export und Organisationsbaum vorhanden |
 | 3 Verbandsarbeit | Erster produktiver Funktionsblock | Gremien, Besetzungen, Sitzungen, Anwesenheit, Beschlussfähigkeit, Tagesordnungen, Anträge, Beschlüsse, Protokolle, Aufgaben und Beschlussregister vorhanden |
-| 4 Veranstaltungen und Kommunikation | Teilweise vorbereitet | Kommunikationshistorie je Mitglied vorhanden; Veranstaltungen und zentrale Kommunikation noch offen |
+| 4 Veranstaltungen und Kommunikation | Erster produktiver Funktionsblock | Kalender, Serienveranstaltungen, Einladungen, RSVP, Kapazitäten, Wartelisten, Anwesenheit, E-Mail-Vorlagen und Batch-Kampagnen vorhanden |
 | 5 Dokumentengenerator | Erster produktiver Funktionsblock | Mandantenfähige Vorlagen, visueller Editor, Platzhalter, PDF-Vorschau, private Ablage, Historie, Rechte und Featuretests vorhanden |
 | 6 Formulare und Workflows | Offen | – |
 | 7 Beiträge und Verwaltung | In Umsetzung, sechster produktiver Funktionsblock | Beiträge, Rechnungen, Finanzdokumente, SEPA, CSV/CAMT-Bankabgleich, Journal, Belege, Kassenbuch, Abschlüsse, Periodensperren, Prüfungen, Rücklastschriften, Erstattungen, Spenden, Einzel-/Sammelbestätigungen und Steuerberater-Export vorhanden |
@@ -79,6 +79,44 @@ Nächste Ausbaustufen innerhalb Phase 3:
 - Delegierten-/Stimmrechtsverwaltung für mehrstufige Verbände
 - Protokoll-PDFs und Beschlussauszüge über den Dokumentengenerator
 - Antragsfristen, Änderungsanträge und Versionierung
+
+## Phase 4 – Veranstaltungen & Kommunikation
+
+Bereits umgesetzt:
+
+- mandantenfähiger Monatskalender für Veranstaltungen und Termine
+- Veranstaltungstypen für allgemeine Termine, Sitzungen, Schulungen, Feiern, Ausflüge, Versammlungen und weitere Fälle
+- gliederungsbezogene oder mandantenweite Veranstaltungen
+- Einzeltermine sowie tägliche, wöchentliche und monatliche Serien mit begrenzter Anzahl
+- optionale Online-Links, Orte, Beschreibungen und interne Notizen
+- Anmeldung mit Kapazität, Anmeldeschluss und optionaler Warteliste
+- Einladung einzelner Mitglieder, aller aktiven Mitglieder, einer Gliederung oder eines dynamischen Mitgliedersegments
+- externe Gäste mit eigener E-Mail-Adresse
+- zufällige persönliche RSVP-Tokens ohne sichtbare Mitglieds- oder Mandanten-ID
+- öffentliche Zu-/Absage ohne Benutzerkonto
+- automatische Wartelistenaufnahme bei voller Kapazität
+- automatische Nachrückung bei Absage eines bestätigten Teilnehmers oder nach Kapazitätserhöhung
+- getrennte Teilnahme- und Anwesenheitsstatus mit Check-in-Zeitpunkt
+- Teilnehmerlisten als CSV und Termine als ICS-Kalenderdatei
+- wiederverwendbare E-Mail-Vorlagen
+- Kampagnen an aktive Mitglieder, Segmente, Gliederungen oder Veranstaltungseinladungen
+- unveränderlicher Empfängersnapshot vor Versand mit Deduplizierung gleicher E-Mail-Adressen
+- shared-hosting-tauglicher E-Mail-Versand in Batches ohne permanenten Queue-Worker
+- Schutz vor Doppelversand an bereits erfolgreiche Empfänger und begrenzte Wiederholungsversuche bei Fehlern
+- dynamische Platzhalter für Mitglied, Veranstaltung und persönlichen RSVP-Link
+- automatische Übernahme versendeter Mitglieds-E-Mails in die bestehende Kommunikationshistorie
+- Rechte `events.view`, `events.manage`, `events.registrations`, `events.attendance`, `communications.view`, `communications.manage` und `communications.send`
+- Audit-Logging aller relevanten Mutationen
+- Featuretests für Serien, Kapazität/Warteliste, öffentliche RSVP-Tokens, Empfängersnapshot, Batchversand, ICS und Tenant-Isolation
+
+Nächste Ausbaustufen innerhalb Phase 4:
+
+- automatische Erinnerungen vor Veranstaltungen per Cron-Aufruf
+- HTML-E-Mail-Layouts mit Vereins-/Verbandsbranding
+- Anhänge und Veranstaltungsunterlagen im Versand
+- Absage-/Terminänderungsbenachrichtigungen an bereits eingeladene Teilnehmer
+- optionale Check-in-Codes oder QR-Check-in für Veranstaltungen
+- weitergehende Versandstatistiken ohne externes Tracking
 
 ## Phase 5 – Dokumentengenerator
 
