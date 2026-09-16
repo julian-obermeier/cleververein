@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Support\Tenancy\TenantContext;
 use App\Services\Authorization\PermissionService;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->scoped(TenantContext::class, fn () => new TenantContext());
+        $this->app->scoped(TenantContext::class, fn () => new TenantContext);
     }
 
     /**

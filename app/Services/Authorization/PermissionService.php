@@ -44,9 +44,16 @@ class PermissionService
 
     private function scopeMatches(?int $assignedOrganization, bool $includeDescendants, ?int $requestedOrganization): bool
     {
-        if ($assignedOrganization === null) return true;
-        if ($requestedOrganization === null) return false;
-        if ($assignedOrganization === $requestedOrganization) return true;
+        if ($assignedOrganization === null) {
+            return true;
+        }
+        if ($requestedOrganization === null) {
+            return false;
+        }
+        if ($assignedOrganization === $requestedOrganization) {
+            return true;
+        }
+
         return $includeDescendants && DB::table('organization_closure')->where('tenant_id', $this->context->id())->where('ancestor_id', $assignedOrganization)->where('descendant_id', $requestedOrganization)->exists();
     }
 }

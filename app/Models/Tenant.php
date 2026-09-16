@@ -11,6 +11,7 @@ class Tenant extends Model
     use SoftDeletes;
 
     protected $fillable = ['public_id', 'name', 'slug', 'status', 'plan', 'trial_ends_at', 'settings'];
+
     protected $casts = ['settings' => 'array', 'trial_ends_at' => 'datetime', 'suspended_at' => 'datetime'];
 
     public function users(): BelongsToMany

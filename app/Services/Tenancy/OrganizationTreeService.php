@@ -27,6 +27,7 @@ class OrganizationTreeService
                     'tenant_id' => $this->context->id(), 'ancestor_id' => $row->ancestor_id, 'descendant_id' => $unit->id, 'depth' => $row->depth + 1,
                 ])->all());
             }
+
             return $unit;
         });
     }

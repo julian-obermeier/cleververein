@@ -14,7 +14,10 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function create(): View { return view('auth.login'); }
+    public function create(): View
+    {
+        return view('auth.login');
+    }
 
     public function store(LoginRequest $request, AuditService $audit, TenantContext $context): RedirectResponse
     {
@@ -24,10 +27,12 @@ class AuthController extends Controller
         }
         if (! Auth::attempt($request->safe()->only(['email', 'password']), $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
+
             return back()->withErrors(['email' => 'E-Mail-Adresse oder Passwort ist nicht korrekt.'])->onlyInput('email');
         }
         if ($request->user()->locked_at) {
             Auth::logout();
+
             return back()->withErrors(['email' => 'Dieses Benutzerkonto ist gesperrt.']);
         }
         RateLimiter::clear($key);
@@ -39,6 +44,7 @@ class AuthController extends Controller
             $audit->record('auth.login', $request->user());
             $context->clear();
         }
+
         return redirect()->intended(route('dashboard'));
     }
 
@@ -47,6 +53,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 }

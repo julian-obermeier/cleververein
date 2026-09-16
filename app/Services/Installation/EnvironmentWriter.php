@@ -31,8 +31,9 @@ class EnvironmentWriter
     private function encode(string $value): string
     {
         if ($value === '' || preg_match('/[\s#="\\]/', $value)) {
-            return '"'.addcslashes($value, "\\\"").'"';
+            return '"'.addcslashes($value, '\\"').'"';
         }
+
         return $value;
     }
 }

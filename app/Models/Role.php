@@ -11,6 +11,11 @@ class Role extends Model
     use BelongsToTenant;
 
     protected $fillable = ['name', 'slug', 'is_system'];
+
     protected $casts = ['is_system' => 'boolean'];
-    public function permissions(): BelongsToMany { return $this->belongsToMany(Permission::class); }
+
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class);
+    }
 }

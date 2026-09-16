@@ -40,6 +40,7 @@ class InstallController extends Controller
 
         if ($step === 'requirements') {
             abort_unless(collect($this->requirements())->every('ok'), 422, 'Nicht alle Systemvoraussetzungen sind erfüllt.');
+
             return redirect()->route('install.show', 'database');
         }
 
@@ -54,6 +55,7 @@ class InstallController extends Controller
                 return back()->withErrors(['db_host' => 'Keine sichere Verbindung zur Datenbank möglich. Bitte Zugangsdaten und Freigaben prüfen.'])->withInput($request->except('db_password'));
             }
             $environment->write(['DB_CONNECTION' => 'mysql', 'DB_HOST' => $data['db_host'], 'DB_PORT' => $data['db_port'], 'DB_DATABASE' => $data['db_database'], 'DB_USERNAME' => $data['db_username'], 'DB_PASSWORD' => $data['db_password'] ?? '']);
+
             return redirect()->route('install.show', 'application');
         }
 
@@ -64,6 +66,7 @@ class InstallController extends Controller
                 'MAIL_FROM_ADDRESS' => $data['mail_from_address'], 'MAIL_FROM_NAME' => $data['mail_from_name'],
                 'APP_KEY' => 'base64:'.base64_encode(random_bytes(32)),
             ]);
+
             return redirect()->route('install.show', 'account');
         }
 

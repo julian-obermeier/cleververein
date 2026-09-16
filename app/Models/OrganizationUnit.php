@@ -13,9 +13,14 @@ class OrganizationUnit extends Model
     use BelongsToTenant, SoftDeletes;
 
     protected $fillable = ['public_id', 'organization_type_id', 'parent_id', 'name', 'short_name', 'slug', 'status', 'founded_at', 'dissolved_at', 'contact_data', 'registry_data', 'settings'];
+
     protected $casts = ['founded_at' => 'date', 'dissolved_at' => 'date', 'contact_data' => 'array', 'registry_data' => 'array', 'settings' => 'array'];
 
-    public function parent(): BelongsTo { return $this->belongsTo(self::class, 'parent_id'); }
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
     public function descendants(): BelongsToMany
     {
         return $this->belongsToMany(self::class, 'organization_closure', 'ancestor_id', 'descendant_id')->withPivot('depth');
