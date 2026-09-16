@@ -141,11 +141,11 @@ class FormWorkflowModuleTest extends TestCase
 
         $submission = app(FormEngineService::class)->submit($form, ['grund' => 'Test'], [], $user);
         $this->assertSame('in_review', $submission->status);
-        $this->assertSame($first->id, $submission->currentStep->workflow_step_id);
+        $this->assertSame($first->id, $submission->currentStep->form_workflow_step_id);
 
         $submission = app(FormEngineService::class)->processStep($submission, $submission->currentStep, $user, 'approve', 'Geprüft');
         $this->assertSame('in_review', $submission->status);
-        $this->assertSame($second->id, $submission->currentStep->workflow_step_id);
+        $this->assertSame($second->id, $submission->currentStep->form_workflow_step_id);
 
         $submission = app(FormEngineService::class)->processStep($submission, $submission->currentStep, $user, 'complete', 'Erledigt');
         $this->assertSame('approved', $submission->status);
