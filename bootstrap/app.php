@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureFormEditable;
+use App\Http\Middleware\EnsureFormPublishable;
 use App\Http\Middleware\EnsureInstalled;
 use App\Http\Middleware\ResolvePublicFormTenant;
 use App\Http\Middleware\ResolveTenant;
@@ -29,6 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'installed' => EnsureInstalled::class,
             'tenant' => ResolveTenant::class,
             'public-form-tenant' => ResolvePublicFormTenant::class,
+            'form-editable' => EnsureFormEditable::class,
+            'form-publishable' => EnsureFormPublishable::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
