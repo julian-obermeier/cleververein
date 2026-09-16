@@ -4,6 +4,7 @@ namespace Tests\Feature\Finance;
 
 use App\Models\FinanceAccount;
 use App\Models\FinanceCashAudit;
+use App\Models\FinanceCashClosing;
 use App\Models\FinanceCategory;
 use App\Models\FinanceEntry;
 use App\Models\FinancePeriodLock;
@@ -78,7 +79,8 @@ class FinanceControlsTest extends TestCase
             'closing_date' => '2026-09-16',
             'counted_balance' => 0,
         ])->assertRedirect();
-        $this->assertDatabaseHas('finance_cash_closings', ['finance_account_id' => $cash->id, 'closing_date' => '2026-09-16']);
+        $closing = FinanceCashClosing::query()->where('finance_account_id', $cash->id)->firstOrFail();
+        $this->assertSame('2026-09-16', $closing->closing_date->toDateString());
 
         $this->actingAs($user)->post(route('finance.ledger.entries.store'), [
             'booking_date' => '2026-09-16',
