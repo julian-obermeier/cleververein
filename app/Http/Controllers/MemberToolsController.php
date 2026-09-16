@@ -12,12 +12,14 @@ use App\Models\Person;
 use App\Services\Audit\AuditService;
 use App\Services\Authorization\PermissionService;
 use App\Support\Tenancy\TenantContext;
+use DateTimeImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class MemberToolsController extends Controller
 {
@@ -149,7 +151,7 @@ class MemberToolsController extends Controller
             ? Household::query()->findOrFail($data['household_id'])
             : Household::query()->create([
                 'public_id' => Str::uuid(),
-                'name' => $data['name'] ?: $member->person->last_name.' Haushalt',
+                'name' => ($data['name'] ?? null) ?: $member->person->last_name.' Haushalt',
             ]);
 
         if (! $household->members()->whereKey($member->id)->exists()) {
@@ -221,6 +223,7 @@ class MemberToolsController extends Controller
         $delimiter = substr_count((string) $firstLine, ';') >= substr_count((string) $firstLine, ',') ? ';' : ',';
         $headers = fgetcsv($handle, 0, $delimiter) ?: [];
         $headers = array_map(fn ($value) => $this->normalizeHeader((string) $value), $headers);
+        abort_if($headers === [] || ! in_array('first_name', $headers, true) || ! in_array('last_name', $headers, true), 422, 'Die CSV-Datei benötigt mindestens die Spalten Vorname und Nachname.');
 
         $created = 0;
         $skipped = 0;
@@ -229,12 +232,15 @@ class MemberToolsController extends Controller
             if (count(array_filter($row, fn ($value) => trim((string) $value) !== '')) === 0) {
                 continue;
             }
-            $values = array_combine($headers, array_pad($row, count($headers), null));
+
+            $normalizedRow = array_slice(array_pad($row, count($headers), null), 0, count($headers));
+            $values = array_combine($headers, $normalizedRow);
             if (! is_array($values)) {
                 $errors++;
 
                 continue;
             }
+
             $firstName = trim((string) ($values['first_name'] ?? ''));
             $lastName = trim((string) ($values['last_name'] ?? ''));
             if ($firstName === '' || $lastName === '') {
@@ -242,41 +248,91 @@ class MemberToolsController extends Controller
 
                 continue;
             }
+
             $email = trim((string) ($values['email'] ?? '')) ?: null;
-            $birthDate = trim((string) ($values['birth_date'] ?? '')) ?: null;
+            if ($email && filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+                $errors++;
+
+                continue;
+            }
+
+            $rawBirthDate = trim((string) ($values['birth_date'] ?? ''));
+            $birthDate = $this->normalizeDate($rawBirthDate);
+            if ($rawBirthDate !== '' && $birthDate === null) {
+                $errors++;
+
+                continue;
+            }
+
+            $rawJoinedAt = trim((string) ($values['joined_at'] ?? ''));
+            $joinedAt = $this->normalizeDate($rawJoinedAt);
+            if ($rawJoinedAt !== '' && $joinedAt === null) {
+                $errors++;
+
+                continue;
+            }
+
+            $memberNumber = trim((string) ($values['member_number'] ?? '')) ?: null;
+            if ($memberNumber && Member::withTrashed()->where('member_number', $memberNumber)->exists()) {
+                $skipped++;
+
+                continue;
+            }
+
             if ($this->duplicateExists($firstName, $lastName, $email, $birthDate)) {
                 $skipped++;
 
                 continue;
             }
 
-            DB::transaction(function () use ($values, $firstName, $lastName, $email, $birthDate, &$created): void {
-                $person = Person::query()->create([
-                    'public_id' => Str::uuid(),
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
-                    'email' => $email,
-                    'birth_date' => $birthDate,
-                    'contact_data' => array_filter([
-                        'phone' => $values['phone'] ?? null,
-                        'mobile' => $values['mobile'] ?? null,
-                        'street' => $values['street'] ?? null,
-                        'postal_code' => $values['postal_code'] ?? null,
-                        'city' => $values['city'] ?? null,
-                    ]),
-                ]);
-                $member = Member::query()->create([
-                    'public_id' => Str::uuid(),
-                    'person_id' => $person->id,
-                    'member_number' => filled($values['member_number'] ?? null) ? trim((string) $values['member_number']) : null,
-                    'status' => in_array($values['status'] ?? null, ['active', 'pending', 'inactive', 'resigned', 'deceased'], true) ? $values['status'] : 'active',
-                    'joined_at' => filled($values['joined_at'] ?? null) ? $values['joined_at'] : null,
-                ]);
-                if (! $member->member_number) {
-                    $member->update(['member_number' => 'M-'.str_pad((string) $member->id, 6, '0', STR_PAD_LEFT)]);
-                }
+            $organizationName = trim((string) ($values['organization'] ?? ''));
+            $memberTypeName = trim((string) ($values['member_type'] ?? ''));
+            $organization = $organizationName !== '' ? OrganizationUnit::query()->where('name', $organizationName)->first() : null;
+            $memberType = $memberTypeName !== '' ? MemberType::query()->where('name', $memberTypeName)->first() : null;
+            $status = $this->normalizeMemberStatus((string) ($values['status'] ?? ''));
+
+            try {
+                DB::transaction(function () use ($values, $firstName, $lastName, $email, $birthDate, $joinedAt, $memberNumber, $organization, $memberType, $memberTypeName, $status): void {
+                    $person = Person::query()->create([
+                        'public_id' => Str::uuid(),
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'email' => $email,
+                        'birth_date' => $birthDate,
+                        'contact_data' => array_filter([
+                            'phone' => trim((string) ($values['phone'] ?? '')) ?: null,
+                            'mobile' => trim((string) ($values['mobile'] ?? '')) ?: null,
+                            'street' => trim((string) ($values['street'] ?? '')) ?: null,
+                            'postal_code' => trim((string) ($values['postal_code'] ?? '')) ?: null,
+                            'city' => trim((string) ($values['city'] ?? '')) ?: null,
+                        ]),
+                    ]);
+                    $member = Member::query()->create([
+                        'public_id' => Str::uuid(),
+                        'person_id' => $person->id,
+                        'member_number' => $memberNumber,
+                        'status' => $status,
+                        'joined_at' => $joinedAt,
+                    ]);
+                    if (! $member->member_number) {
+                        $member->update(['member_number' => 'M-'.str_pad((string) $member->id, 6, '0', STR_PAD_LEFT)]);
+                    }
+
+                    if ($organization || $memberType || $memberTypeName !== '') {
+                        $member->memberships()->create([
+                            'organization_unit_id' => $organization?->id,
+                            'member_type_id' => $memberType?->id,
+                            'membership_type' => $memberType?->name ?? ($memberTypeName !== '' ? $memberTypeName : 'Ordentliches Mitglied'),
+                            'status' => 'active',
+                            'starts_at' => $joinedAt,
+                            'is_primary' => true,
+                        ]);
+                    }
+                });
                 $created++;
-            });
+            } catch (Throwable) {
+                $errors++;
+            }
         }
         fclose($handle);
 
@@ -301,6 +357,34 @@ class MemberToolsController extends Controller
         })->exists();
     }
 
+    private function normalizeDate(string $value): ?string
+    {
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['Y-m-d', 'd.m.Y'] as $format) {
+            $date = DateTimeImmutable::createFromFormat('!'.$format, $value);
+            if ($date && $date->format($format) === $value) {
+                return $date->format('Y-m-d');
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeMemberStatus(string $value): string
+    {
+        return match (Str::lower(trim($value))) {
+            'active', 'aktiv' => 'active',
+            'pending', 'vorgemerkt' => 'pending',
+            'inactive', 'inaktiv' => 'inactive',
+            'resigned', 'ausgetreten' => 'resigned',
+            'deceased', 'verstorben' => 'deceased',
+            default => 'active',
+        };
+    }
+
     private function normalizeHeader(string $header): string
     {
         $header = Str::lower(trim(str_replace("\xEF\xBB\xBF", '', $header)));
@@ -313,6 +397,8 @@ class MemberToolsController extends Controller
             'geburtsdatum', 'birth_date' => 'birth_date',
             'status' => 'status',
             'eintritt', 'eintrittsdatum', 'joined_at' => 'joined_at',
+            'organisation', 'organization', 'organisationseinheit' => 'organization',
+            'mitgliedsart', 'mitgliedschaftsart', 'member_type' => 'member_type',
             'telefon', 'phone' => 'phone',
             'mobil', 'mobile', 'handy' => 'mobile',
             'straße', 'strasse', 'street' => 'street',
