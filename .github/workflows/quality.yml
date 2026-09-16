@@ -31,11 +31,7 @@ jobs:
           path: public/build
           if-no-files-found: error
           retention-days: 7
-      - name: Diagnose Pint formatting
-        run: |
-          ./vendor/bin/pint app/Http/Controllers/MemberSpreadsheetController.php
-          git diff -- app/Http/Controllers/MemberSpreadsheetController.php
-          git diff --exit-code -- app/Http/Controllers/MemberSpreadsheetController.php
+      - run: ./vendor/bin/pint --test
       - run: php artisan test
       - name: Commit compiled production assets
         if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
