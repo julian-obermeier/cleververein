@@ -185,7 +185,7 @@ class FinanceService
             throw ValidationException::withMessages(['credit' => 'Der Gutschriftbetrag muss größer 0 sein und darf den noch nicht gutgeschriebenen Rechnungsbetrag nicht übersteigen.']);
         }
 
-        return DB::transaction(function () use ($invoice, $amount, $reason, $userId, $cancelInvoice): FinanceCreditNote {
+        return DB::transaction(function () use ($invoice, $amount, $reason, $userId, $cancelInvoice, $creditable): FinanceCreditNote {
             $year = (int) now()->year;
             $number = $this->nextSequence('credit_note', $year);
             $credit = FinanceCreditNote::query()->create([
