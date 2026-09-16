@@ -71,6 +71,14 @@ class FinanceOperationsController extends Controller
             'bic' => ['nullable', 'string', 'max:11'],
             'payment_terms_days' => ['required', 'integer', 'between:1,180'],
             'invoice_footer' => ['nullable', 'string', 'max:3000'],
+            'donation_receipts_enabled' => ['nullable', 'boolean'],
+            'tax_notice_type' => ['nullable', 'in:freistellungsbescheid,koerperschaftsteuerbescheid,60a'],
+            'tax_office' => ['nullable', 'string', 'max:180'],
+            'tax_notice_date' => ['nullable', 'date'],
+            'tax_notice_reference' => ['nullable', 'string', 'max:180'],
+            'tax_notice_years' => ['nullable', 'string', 'max:120'],
+            'tax_exempt_purposes' => ['nullable', 'string', 'max:3000'],
+            'membership_contributions_deductible' => ['nullable', 'boolean'],
         ]);
         $settings = FinanceSetting::query()->firstOrNew();
         $settings->fill([
@@ -78,8 +86,14 @@ class FinanceOperationsController extends Controller
             'country' => strtoupper($data['country']),
             'iban' => filled($data['iban'] ?? null) ? strtoupper(str_replace(' ', '', $data['iban'])) : $settings->iban,
             'bic' => filled($data['bic'] ?? null) ? strtoupper(str_replace(' ', '', $data['bic'])) : $settings->bic,
+            'donation_receipts_enabled' => $request->boolean('donation_receipts_enabled'),
+            'membership_contributions_deductible' => $request->boolean('membership_contributions_deductible'),
         ])->save();
-        $this->audit->record('finance.settings_updated', $settings, new: $settings->only(['creditor_name', 'city', 'country', 'creditor_id', 'payment_terms_days']));
+        $this->audit->record('finance.settings_updated', $settings, new: $settings->only([
+            'creditor_name', 'city', 'country', 'creditor_id', 'payment_terms_days', 'donation_receipts_enabled',
+            'tax_notice_type', 'tax_office', 'tax_notice_date', 'tax_notice_reference', 'tax_notice_years',
+            'tax_exempt_purposes', 'membership_contributions_deductible',
+        ]));
 
         return back()->with('success', 'Finanzstammdaten wurden gespeichert.');
     }
