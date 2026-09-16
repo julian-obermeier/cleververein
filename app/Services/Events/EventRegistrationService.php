@@ -54,9 +54,12 @@ class EventRegistrationService
             }
 
             $oldStatus = $registration->status;
+            if ($response === 'registered' && $oldStatus === 'registered') {
+                return $registration;
+            }
             if ($response === 'declined') {
                 $registration->update(['status' => 'declined', 'responded_at' => now()]);
-                if (in_array($oldStatus, ['registered'], true)) {
+                if ($oldStatus === 'registered') {
                     $this->promoteWaitlist($event);
                 }
 
@@ -66,7 +69,7 @@ class EventRegistrationService
             $confirmed = EventRegistration::query()
                 ->where('event_id', $event->id)
                 ->where('status', 'registered')
-                ->whereKeyNot($registration->id)
+                ->where('id', '!=', $registration->id)
                 ->count();
 
             if ($event->capacity !== null && $confirmed >= $event->capacity) {
