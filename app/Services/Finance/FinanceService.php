@@ -2,6 +2,7 @@
 
 namespace App\Services\Finance;
 
+use App\Models\BankTransaction;
 use App\Models\ContributionOverride;
 use App\Models\ContributionRate;
 use App\Models\ContributionRule;
@@ -21,6 +22,7 @@ class FinanceService
     public function __construct(
         private TenantContext $tenant,
         private FinanceRecipientService $recipients,
+        private FinanceLedgerService $ledger,
     ) {}
 
     public function resolveContribution(Member $member, ?CarbonImmutable $date = null): ?array
@@ -244,7 +246,11 @@ class FinanceService
                 'amount' => $data['amount'], 'paid_at' => $data['paid_at'], 'method' => $data['method'],
                 'reference' => $data['reference'] ?? null, 'notes' => $data['notes'] ?? null, 'recorded_by' => $userId,
             ]);
-            $this->recalculate($invoice);
+            $invoice = $this->recalculate($invoice);
+            $transaction = ! empty($data['bank_transaction_id'])
+                ? BankTransaction::query()->find($data['bank_transaction_id'])
+                : null;
+            $this->ledger->postPayment($payment, $invoice, $userId, $transaction);
 
             return $payment;
         });
