@@ -5,8 +5,10 @@ namespace App\Services\Finance;
 use App\Models\ContributionOverride;
 use App\Models\ContributionRate;
 use App\Models\ContributionRule;
+use App\Models\FinanceCreditNote;
 use App\Models\FinanceInvoice;
 use App\Models\FinancePayment;
+use App\Models\Household;
 use App\Models\Member;
 use App\Support\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
@@ -16,149 +18,118 @@ use Illuminate\Validation\ValidationException;
 
 class FinanceService
 {
-    public function __construct(private TenantContext $tenant) {}
+    public function __construct(
+        private TenantContext $tenant,
+        private FinanceRecipientService $recipients,
+    ) {}
 
     public function resolveContribution(Member $member, ?CarbonImmutable $date = null): ?array
     {
         $date ??= CarbonImmutable::today();
         $member->loadMissing(['person', 'memberships.memberType', 'memberships.organizationUnit']);
 
-        $override = ContributionOverride::query()
-            ->with('rate')
+        $override = ContributionOverride::query()->with('rate')
             ->where('member_id', $member->id)
-            ->where(function ($query) use ($date): void {
-                $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date->toDateString());
-            })
-            ->where(function ($query) use ($date): void {
-                $query->whereNull('valid_until')->orWhere('valid_until', '>=', $date->toDateString());
-            })
-            ->latest('id')
-            ->first();
+            ->where(fn ($query) => $query->whereNull('valid_from')->orWhere('valid_from', '<=', $date->toDateString()))
+            ->where(fn ($query) => $query->whereNull('valid_until')->orWhere('valid_until', '>=', $date->toDateString()))
+            ->latest('id')->first();
 
         if ($override?->is_exempt) {
             return ['exempt' => true, 'reason' => $override->reason];
         }
-
         if ($override) {
             $rate = $override->rate;
-            if ($rate && $rate->is_active) {
+            if ($rate && $rate->is_active && ($rate->scope ?? 'member') === 'member') {
                 return [
-                    'exempt' => false,
-                    'rate' => $rate,
+                    'exempt' => false, 'rate' => $rate,
                     'amount' => $override->amount !== null ? (float) $override->amount : (float) $rate->amount,
-                    'reason' => $override->reason,
-                    'source' => 'override',
+                    'reason' => $override->reason, 'source' => 'override',
                 ];
             }
         }
 
-        $membership = $member->memberships
-            ->where('status', 'active')
-            ->sortByDesc('is_primary')
-            ->first() ?? $member->memberships->sortByDesc('is_primary')->first();
-        $age = $member->person?->birth_date
-            ? (int) $member->person->birth_date->diffInYears($date)
-            : null;
+        $membership = $member->memberships->where('status', 'active')->sortByDesc('is_primary')->first()
+            ?? $member->memberships->sortByDesc('is_primary')->first();
+        $age = $member->person?->birth_date ? (int) $member->person->birth_date->diffInYears($date) : null;
 
-        $rules = ContributionRule::query()
-            ->with('rate')
-            ->where('is_active', true)
-            ->orderBy('priority')
-            ->orderBy('id')
-            ->get();
+        $rule = ContributionRule::query()->with('rate')->where('is_active', true)->orderBy('priority')->orderBy('id')->get()
+            ->first(function (ContributionRule $rule) use ($membership, $age): bool {
+                if (! $rule->rate?->is_active || ($rule->rate->scope ?? 'member') !== 'member') { return false; }
+                if ($rule->member_type_id && $rule->member_type_id !== $membership?->member_type_id) { return false; }
+                if ($rule->organization_unit_id && $rule->organization_unit_id !== $membership?->organization_unit_id) { return false; }
+                if ($rule->min_age !== null && ($age === null || $age < $rule->min_age)) { return false; }
+                if ($rule->max_age !== null && ($age === null || $age > $rule->max_age)) { return false; }
 
-        $rule = $rules->first(function (ContributionRule $rule) use ($membership, $age): bool {
-            if (! $rule->rate?->is_active) {
-                return false;
-            }
-            if ($rule->member_type_id && $rule->member_type_id !== $membership?->member_type_id) {
-                return false;
-            }
-            if ($rule->organization_unit_id && $rule->organization_unit_id !== $membership?->organization_unit_id) {
-                return false;
-            }
-            if ($rule->min_age !== null && ($age === null || $age < $rule->min_age)) {
-                return false;
-            }
-            if ($rule->max_age !== null && ($age === null || $age > $rule->max_age)) {
-                return false;
-            }
+                return true;
+            });
 
-            return true;
-        });
-
-        if (! $rule) {
-            return null;
-        }
-
-        return [
-            'exempt' => false,
-            'rate' => $rule->rate,
-            'amount' => (float) $rule->rate->amount,
-            'reason' => null,
-            'source' => 'rule',
-        ];
+        return $rule ? ['exempt' => false, 'rate' => $rule->rate, 'amount' => (float) $rule->rate->amount, 'reason' => null, 'source' => 'rule'] : null;
     }
 
     public function createContributionDraft(Member $member, int $year, int $userId): ?FinanceInvoice
     {
         $resolved = $this->resolveContribution($member, CarbonImmutable::create($year, 1, 1));
-        if (! $resolved || $resolved['exempt']) {
-            return null;
-        }
+        if (! $resolved || $resolved['exempt']) { return null; }
 
         /** @var ContributionRate $rate */
         $rate = $resolved['rate'];
-        $existing = FinanceInvoice::query()
-            ->where('member_id', $member->id)
-            ->whereYear('invoice_date', $year)
+        $existing = FinanceInvoice::query()->where('member_id', $member->id)->whereYear('invoice_date', $year)
             ->whereHas('items', fn ($query) => $query->where('contribution_rate_id', $rate->id))
-            ->whereNotIn('status', ['cancelled'])
-            ->first();
-        if ($existing) {
-            return $existing;
-        }
+            ->whereNotIn('status', ['cancelled'])->first();
+        if ($existing) { return $existing; }
 
-        $multiplier = match ($rate->interval) {
-            'monthly' => 12,
-            'quarterly' => 4,
-            'half_yearly' => 2,
-            default => 1,
-        };
-        $unitAmount = (float) $resolved['amount'];
-        $gross = round($unitAmount * $multiplier, 2);
-        $description = $rate->name.' · Beitragsjahr '.$year;
-        if ($multiplier > 1) {
-            $description .= ' · '.$multiplier.' × '.number_format($unitAmount, 2, ',', '.').' €';
-        }
+        [$multiplier, $unitAmount, $gross, $description] = $this->contributionAmounts($rate, (float) $resolved['amount'], $year);
 
         return DB::transaction(function () use ($member, $year, $userId, $rate, $multiplier, $unitAmount, $gross, $description): FinanceInvoice {
             $invoice = FinanceInvoice::query()->create([
-                'public_id' => Str::uuid(),
-                'member_id' => $member->id,
-                'status' => 'draft',
-                'invoice_date' => $year.'-01-01',
-                'due_date' => $year.'-01-31',
-                'net_amount' => $gross,
-                'tax_amount' => 0,
-                'gross_amount' => $gross,
-                'paid_amount' => 0,
-                'currency' => 'EUR',
-                'created_by' => $userId,
+                'public_id' => Str::uuid(), 'member_id' => $member->id, 'status' => 'draft',
+                'invoice_date' => $year.'-01-01', 'due_date' => $year.'-01-31',
+                'net_amount' => $gross, 'tax_amount' => 0, 'gross_amount' => $gross, 'paid_amount' => 0,
+                'currency' => 'EUR', 'created_by' => $userId,
             ]);
             $invoice->items()->create([
-                'contribution_rate_id' => $rate->id,
-                'description' => $description,
-                'quantity' => $multiplier,
-                'unit_price' => $unitAmount,
-                'tax_rate' => 0,
-                'net_amount' => $gross,
-                'tax_amount' => 0,
-                'gross_amount' => $gross,
-                'sort_order' => 10,
+                'contribution_rate_id' => $rate->id, 'description' => $description, 'quantity' => $multiplier,
+                'unit_price' => $unitAmount, 'tax_rate' => 0, 'net_amount' => $gross, 'tax_amount' => 0,
+                'gross_amount' => $gross, 'sort_order' => 10,
             ]);
 
             return $invoice->fresh(['items', 'member.person']);
+        });
+    }
+
+    public function createHouseholdContributionDraft(Household $household, ContributionRate $rate, int $year, int $userId): FinanceInvoice
+    {
+        abort_unless(($rate->scope ?? 'member') === 'household' && $rate->is_active, 422, 'Der Beitragssatz ist kein aktiver Haushaltsbeitrag.');
+        $household->loadMissing('members.person');
+        $payer = $household->members->first(fn (Member $member) => (bool) $member->pivot?->is_primary_contact)
+            ?? $household->members->first(fn (Member $member) => $member->status === 'active')
+            ?? $household->members->first();
+        if (! $payer) {
+            throw ValidationException::withMessages(['household' => 'Der Haushalt hat kein zugeordnetes Mitglied als Rechnungsempfänger.']);
+        }
+
+        $existing = FinanceInvoice::query()->where('household_id', $household->id)->whereYear('invoice_date', $year)
+            ->whereHas('items', fn ($query) => $query->where('contribution_rate_id', $rate->id))
+            ->whereNotIn('status', ['cancelled'])->first();
+        if ($existing) { return $existing; }
+
+        [$multiplier, $unitAmount, $gross, $description] = $this->contributionAmounts($rate, (float) $rate->amount, $year);
+        $description = $rate->name.' · '.$household->name.' · Beitragsjahr '.$year.($multiplier > 1 ? ' · '.$multiplier.' × '.number_format($unitAmount, 2, ',', '.').' €' : '');
+
+        return DB::transaction(function () use ($household, $payer, $rate, $year, $userId, $multiplier, $unitAmount, $gross, $description): FinanceInvoice {
+            $invoice = FinanceInvoice::query()->create([
+                'public_id' => Str::uuid(), 'member_id' => $payer->id, 'household_id' => $household->id,
+                'status' => 'draft', 'invoice_date' => $year.'-01-01', 'due_date' => $year.'-01-31',
+                'net_amount' => $gross, 'tax_amount' => 0, 'gross_amount' => $gross, 'paid_amount' => 0,
+                'currency' => 'EUR', 'created_by' => $userId,
+            ]);
+            $invoice->items()->create([
+                'contribution_rate_id' => $rate->id, 'description' => $description, 'quantity' => $multiplier,
+                'unit_price' => $unitAmount, 'tax_rate' => 0, 'net_amount' => $gross, 'tax_amount' => 0,
+                'gross_amount' => $gross, 'sort_order' => 10,
+            ]);
+
+            return $invoice->fresh(['items', 'member.person', 'household.members.person']);
         });
     }
 
@@ -172,39 +143,49 @@ class FinanceService
         }
 
         return DB::transaction(function () use ($invoice, $userId): FinanceInvoice {
+            $invoice->loadMissing(['member.person', 'household.members.person']);
             $year = (int) ($invoice->invoice_date?->format('Y') ?: now()->year);
-
-            DB::table('finance_sequences')->insertOrIgnore([
-                'tenant_id' => $this->tenant->id(),
-                'sequence_key' => 'invoice',
-                'year' => $year,
-                'next_value' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-
-            $sequence = DB::table('finance_sequences')
-                ->where('tenant_id', $this->tenant->id())
-                ->where('sequence_key', 'invoice')
-                ->where('year', $year)
-                ->lockForUpdate()
-                ->firstOrFail();
-            $number = (int) $sequence->next_value;
-            DB::table('finance_sequences')->where('id', $sequence->id)->update([
-                'next_value' => $number + 1,
-                'updated_at' => now(),
-            ]);
-
+            $number = $this->nextSequence('invoice', $year);
             $invoice->update([
-                'invoice_number' => sprintf('RE-%d-%06d', $year, $number),
-                'status' => 'open',
-                'issued_by' => $userId,
-                'issued_at' => now(),
+                'invoice_number' => sprintf('RE-%d-%06d', $year, $number), 'status' => 'open',
+                'recipient_snapshot' => $this->recipients->snapshot($invoice->member, $invoice->household),
+                'issued_by' => $userId, 'issued_at' => now(),
                 'invoice_date' => $invoice->invoice_date ?: now()->toDateString(),
                 'due_date' => $invoice->due_date ?: now()->addDays(14)->toDateString(),
             ]);
 
             return $invoice->fresh();
+        });
+    }
+
+    public function createCreditNote(FinanceInvoice $invoice, float $amount, string $reason, int $userId, bool $cancelInvoice = false): FinanceCreditNote
+    {
+        if ($invoice->status === 'draft') {
+            throw ValidationException::withMessages(['credit' => 'Für einen Entwurf wird keine Gutschrift benötigt.']);
+        }
+        $invoice->loadMissing(['member.person', 'household.members.person', 'creditNotes']);
+        $creditable = max(0, (float) $invoice->gross_amount - $invoice->credited_amount);
+        if ($amount <= 0 || $amount > $creditable + 0.01) {
+            throw ValidationException::withMessages(['credit' => 'Der Gutschriftbetrag muss größer 0 sein und darf den noch nicht gutgeschriebenen Rechnungsbetrag nicht übersteigen.']);
+        }
+
+        return DB::transaction(function () use ($invoice, $amount, $reason, $userId, $cancelInvoice): FinanceCreditNote {
+            $year = (int) now()->year;
+            $number = $this->nextSequence('credit_note', $year);
+            $credit = FinanceCreditNote::query()->create([
+                'public_id' => Str::uuid(), 'finance_invoice_id' => $invoice->id, 'member_id' => $invoice->member_id,
+                'household_id' => $invoice->household_id, 'credit_number' => sprintf('GS-%d-%06d', $year, $number),
+                'status' => 'issued', 'credit_date' => now()->toDateString(), 'amount' => round($amount, 2),
+                'reason' => $reason, 'recipient_snapshot' => $invoice->recipient_snapshot ?: $this->recipients->snapshot($invoice->member, $invoice->household),
+                'created_by' => $userId, 'issued_by' => $userId, 'issued_at' => now(),
+            ]);
+            if ($cancelInvoice && abs($creditable - $amount) < 0.01) {
+                $invoice->update(['status' => 'cancelled', 'cancelled_at' => now()]);
+            } else {
+                $this->recalculate($invoice);
+            }
+
+            return $credit->fresh();
         });
     }
 
@@ -214,25 +195,15 @@ class FinanceService
         $tax = round((float) $invoice->items()->sum('tax_amount'), 2);
         $gross = round((float) $invoice->items()->sum('gross_amount'), 2);
         $paid = round((float) $invoice->payments()->sum('amount'), 2);
+        $credited = round((float) $invoice->creditNotes()->where('status', 'issued')->sum('amount'), 2);
         $status = $invoice->status;
 
         if (! in_array($status, ['draft', 'cancelled'], true)) {
-            if ($paid >= $gross && $gross > 0) {
-                $status = 'paid';
-            } elseif ($invoice->due_date?->isPast() && $paid < $gross) {
-                $status = 'overdue';
-            } else {
-                $status = 'open';
-            }
+            if (($paid + $credited) >= $gross && $gross > 0) { $status = 'paid'; }
+            elseif ($invoice->due_date?->isPast() && ($paid + $credited) < $gross) { $status = 'overdue'; }
+            else { $status = 'open'; }
         }
-
-        $invoice->update([
-            'net_amount' => $net,
-            'tax_amount' => $tax,
-            'gross_amount' => $gross,
-            'paid_amount' => $paid,
-            'status' => $status,
-        ]);
+        $invoice->update(['net_amount' => $net, 'tax_amount' => $tax, 'gross_amount' => $gross, 'paid_amount' => $paid, 'status' => $status]);
 
         return $invoice->fresh();
     }
@@ -242,22 +213,44 @@ class FinanceService
         if (in_array($invoice->status, ['draft', 'cancelled'], true)) {
             throw ValidationException::withMessages(['invoice' => 'Für Entwürfe oder stornierte Rechnungen können keine Zahlungen gebucht werden.']);
         }
+        $invoice->loadMissing('creditNotes');
+        if ((float) $data['amount'] > $invoice->open_amount + 0.01) {
+            throw ValidationException::withMessages(['amount' => 'Der Zahlungseingang übersteigt den offenen Rechnungsbetrag. Überzahlungen müssen separat geklärt werden.']);
+        }
 
         return DB::transaction(function () use ($invoice, $data, $userId): FinancePayment {
             $payment = FinancePayment::query()->create([
-                'public_id' => Str::uuid(),
-                'finance_invoice_id' => $invoice->id,
-                'member_id' => $invoice->member_id,
-                'amount' => $data['amount'],
-                'paid_at' => $data['paid_at'],
-                'method' => $data['method'],
-                'reference' => $data['reference'] ?? null,
-                'notes' => $data['notes'] ?? null,
-                'recorded_by' => $userId,
+                'public_id' => Str::uuid(), 'finance_invoice_id' => $invoice->id, 'member_id' => $invoice->member_id,
+                'amount' => $data['amount'], 'paid_at' => $data['paid_at'], 'method' => $data['method'],
+                'reference' => $data['reference'] ?? null, 'notes' => $data['notes'] ?? null, 'recorded_by' => $userId,
             ]);
             $this->recalculate($invoice);
 
             return $payment;
         });
+    }
+
+    private function contributionAmounts(ContributionRate $rate, float $unitAmount, int $year): array
+    {
+        $multiplier = match ($rate->interval) { 'monthly' => 12, 'quarterly' => 4, 'half_yearly' => 2, default => 1 };
+        $gross = round($unitAmount * $multiplier, 2);
+        $description = $rate->name.' · Beitragsjahr '.$year;
+        if ($multiplier > 1) { $description .= ' · '.$multiplier.' × '.number_format($unitAmount, 2, ',', '.').' €'; }
+
+        return [$multiplier, $unitAmount, $gross, $description];
+    }
+
+    private function nextSequence(string $key, int $year): int
+    {
+        DB::table('finance_sequences')->insertOrIgnore([
+            'tenant_id' => $this->tenant->id(), 'sequence_key' => $key, 'year' => $year,
+            'next_value' => 1, 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        $sequence = DB::table('finance_sequences')->where('tenant_id', $this->tenant->id())
+            ->where('sequence_key', $key)->where('year', $year)->lockForUpdate()->firstOrFail();
+        $number = (int) $sequence->next_value;
+        DB::table('finance_sequences')->where('id', $sequence->id)->update(['next_value' => $number + 1, 'updated_at' => now()]);
+
+        return $number;
     }
 }
