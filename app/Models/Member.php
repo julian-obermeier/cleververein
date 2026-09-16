@@ -55,4 +55,20 @@ class Member extends Model
         return $this->hasMany(CustomFieldValue::class, 'entity_id')
             ->where('entity_type', 'member');
     }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(MemberTag::class, 'member_tag_assignments')
+            ->withTimestamps();
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(MemberDocument::class);
+    }
+
+    public function communications(): HasMany
+    {
+        return $this->hasMany(MemberCommunication::class);
+    }
 }
