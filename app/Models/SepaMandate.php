@@ -11,7 +11,7 @@ class SepaMandate extends Model
     use BelongsToTenant;
 
     protected $fillable = [
-        'public_id', 'member_id', 'mandate_reference', 'account_holder', 'iban', 'bic', 'signed_at', 'revoked_at', 'status',
+        'public_id', 'member_id', 'mandate_reference', 'account_holder', 'iban', 'bic', 'signed_at', 'revoked_at', 'status', 'collection_count', 'last_collected_at',
     ];
 
     protected $casts = [
@@ -19,12 +19,11 @@ class SepaMandate extends Model
         'bic' => 'encrypted',
         'signed_at' => 'date',
         'revoked_at' => 'date',
+        'collection_count' => 'integer',
+        'last_collected_at' => 'date',
     ];
 
-    public function member(): BelongsTo
-    {
-        return $this->belongsTo(Member::class);
-    }
+    public function member(): BelongsTo { return $this->belongsTo(Member::class); }
 
     public function getMaskedIbanAttribute(): string
     {
