@@ -8,7 +8,7 @@
 | 4 Veranstaltungen und Kommunikation | Teilweise vorbereitet | Kommunikationshistorie je Mitglied vorhanden; Veranstaltungen und zentrale Kommunikation noch offen |
 | 5 Dokumentengenerator | Erster produktiver Funktionsblock | Mandantenfähige Vorlagen, visueller Editor, Platzhalter, PDF-Vorschau, private Ablage, Historie, Rechte und Featuretests vorhanden |
 | 6 Formulare und Workflows | Offen | – |
-| 7 Beiträge und Verwaltung | In Umsetzung, erster produktiver Funktionsblock | Beitragssätze/-regeln, individuelle Ausnahmen, Jahresbeitragslauf, Rechnungen, Zahlungseingänge, SEPA-Mandate und Mahnhistorie vorhanden |
+| 7 Beiträge und Verwaltung | In Umsetzung, zweiter produktiver Funktionsblock | Beiträge, Rechnungen, Gutschriften/Storno, Finanz-PDFs, SEPA-Läufe, Bankabgleich, Haushaltsbeiträge und Mahnwesen vorhanden |
 | 8 SaaS-Ausbau | Offen | Tenant-Kern vorhanden, Tarif-/Aboverwaltung der SaaS-Plattform noch offen |
 | 9 Stabilisierung | Laufend | CI prüft Vite-Build, Pint und PHPUnit; vollständige Release-/Updateabnahme noch offen |
 
@@ -71,19 +71,33 @@ Bereits umgesetzt:
 - Beitragsregeln nach Mitgliedsart, Organisation und Alter mit Prioritäten
 - individuelle Beitragsbeträge und zeitlich begrenzte Beitragsbefreiungen
 - Jahresbeitragslauf mit Dublettenschutz je Mitglied/Beitragssatz/Jahr
+- Haushalts-/Familienbeiträge mit einmaliger Abrechnung je Haushalt/Beitragssatz/Jahr und Hauptkontakt als Rechnungsempfänger
 - Rechnungsentwürfe ohne Nummer und verbindliches Ausstellen mit mandantenbezogener Jahressequenz
+- unveränderlicher Empfänger-Snapshot beim Ausstellen einer Rechnung
 - Rechnungspositionen, Netto-/Steuer-/Bruttobeträge und offene Posten
-- Zahlungseingänge mit automatischer Statusaktualisierung
+- private Rechnungs-PDFs mit berechtigungsgeprüftem Download
+- Zahlungseingänge mit automatischer Statusaktualisierung und Schutz vor unkontrollierten Überzahlungen
+- Gutschriften mit eigener GS-Jahressequenz und optionalem Vollstorno der Ursprungsrechnung
+- private Gutschrift-PDFs
 - verschlüsselte SEPA-Mandate mit maskierter IBAN-Anzeige
+- Finanzstammdaten mit verschlüsselter Gläubiger-IBAN/BIC und strukturierter Anschrift
+- SEPA-Core-Lastschriftläufe als pain.008.001.08 mit getrennten FRST-/RCUR-Blöcken
+- expliziter SEPA-Lebenszyklus: erzeugt, exportiert und als eingereicht markiert
+- private Speicherung der SEPA-XML-Dateien
+- CSV-Bankimport mit Datei-/Umsatz-Dublettenschutz
+- automatische Zahlungszuordnung über Rechnungsnummer sowie ergänzend Mitgliedsnummer und exakten Betrag
+- manuelle Zuordnung und bewusstes Ignorieren ungeklärter Bankumsätze
 - Mahnstufen und Mahngebühren als separate Historie
-- Finanz-Cockpit mit offenen Forderungen, Überfälligkeit und Zahlungseingängen
-- eigene Finance-Permissions und Audit-Logging
+- private Mahnungs-PDFs
+- Finanz-Cockpit plus separater Bereich „Finanzoperationen“ für sensible Stammdaten, SEPA und Bankabgleich
+- eigene Finance-Permissions, Tenant-Isolation und Audit-Logging
+- Featuretests für Rechnungsnummern, PDF-Erzeugung, Gutschriften, Haushaltsbeiträge, SEPA-XML, Bankabgleich und Verschlüsselung
 
 Nächste Ausbaustufen:
 
-- Rechnungs-/Mahnungs-PDFs über den Dokumentengenerator
-- SEPA-XML-Export und Lastschriftläufe
-- Bankimport und automatische Zahlungszuordnung
-- Storno-/Gutschriften-Workflow
-- Haushalts-/Familienbeiträge und Beitragsdeckel
-- Buchungskonten/Kategorien und umfangreichere Finanzberichte
+- Rücklastschriften und Erstattungs-/Guthabenworkflow
+- CAMT-Import zusätzlich zum generischen Bank-CSV
+- Bank-spezifische SEPA-Validierung/XSD-Prüfung vor Export
+- Buchungskonten/Kategorien und Kassenbuch
+- Spenden/Zuwendungsbescheinigungen
+- umfangreichere Finanzberichte und Jahresauswertungen
