@@ -22,6 +22,7 @@
         ['Übersicht','dashboard','dashboard','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm8 0h8V11h-8v9Zm0-16v5h8V4h-8Z'],
         ['Mitglieder','members.index','members.index|members.create|members.show|members.edit|members.settings|members.crm|members.history','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0H5Zm14-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm1.5 2c2.2 0 4 1.8 4 4v1h-3.2a9 9 0 0 0-2.5-5h1.7Z'],
         ['Segmente','members.segments.index','members.segments.*','M4 5h16v3H4V5Zm0 6h10v3H4v-3Zm0 6h7v3H4v-3Zm12-5 2 2 4-4 1.5 1.5L18 17l-3.5-3.5L16 12Z'],
+        ['Dokumente','documents.index','documents.*','M6 2h9l5 5v15H6V2Zm8 2v5h5M9 13h8v2H9v-2Zm0 4h8v2H9v-2Zm0-8h3v2H9V9Z'],
         ['Haushalte','members.households.index','members.households.*','M4 11 12 3 20 11v9a1 1 0 0 1-1 1h-5v-6h-4v6H9a1 1 0 0 1-1-1v-9Zm5-4V4h6v3l-3-2-3 2Z'],
         ['Ämter & Funktionen','members.functions.index','members.functions.*','M12 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 21v-2a7 7 0 0 1 14 0v2H5Zm14-13h2v5h-2V8Zm-2 2h6v2h-6v-2Z'],
         ['Organisation','organization.index','organization.*','M4 3h7v6H4V3Zm9 0h7v6h-7V3ZM4 15h7v6H4v-6Zm9 0h7v6h-7v-6ZM7 9v3h10V9h2v5H5V9h2Z'],
@@ -34,7 +35,7 @@
             </a>
         @endforeach
     </nav>
-    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.2.1 · Mitglieder-CRM</span></div>
+    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.3.0 · Dokumenten-Generator</span></div>
 </aside>
 
 <div class="min-h-screen lg:pl-64">
