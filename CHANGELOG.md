@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.10.0 – Gremien, Sitzungen & Beschlüsse
+
+- eigener Bereich „Gremien & Sitzungen“ für Vorstände, Ausschüsse, Versammlungen, Arbeitsgruppen und Beiräte
+- Gremien können mandantenweit oder einer Organisationseinheit/Gliederung zugeordnet werden
+- historische Gremienzugehörigkeiten von Mitgliedern mit Rolle, Vorsitz, Stimmrecht und Amtszeit
+- Sitzungen mit Typ, Termin, Ort, Online-Link, Status und optionaler Beschlussfähigkeitsgrenze
+- automatische Übernahme aktiver Gremienmitglieder als Eingeladene bei neuen Sitzungen
+- Teilnehmer- und Anwesenheitsverwaltung inklusive externen Gästen und Protokollführung
+- automatische serverseitige Ermittlung der Beschlussfähigkeit anhand anwesender Stimmberechtigter
+- strukturierte Tagesordnung mit TOP-Nummern, Typen und geplanter Beratungsdauer
+- Antragsverwaltung mit transaktionssicherer `AN-YYYY-xxxxxx`-Jahressequenz
+- Beschlussverwaltung mit transaktionssicherer `BE-YYYY-xxxxxx`-Jahressequenz
+- Abstimmungsergebnisse als Summen für Ja, Nein, Enthaltung und ungültige Stimmen
+- geheime Abstimmungen speichern bewusst keine personenbezogenen Einzelstimmen
+- angenommene/abgelehnte Beschlüsse aktualisieren den zugehörigen Antrag
+- Sitzungsprotokolle mit Entwurf-, Prüf- und Freigabestatus
+- freigegebene Protokolle sind gegen stilles nachträgliches Überschreiben gesperrt
+- Aufgaben aus Sitzungen oder Beschlüssen mit Zuständigkeit, Priorität, Frist und Status
+- zentrales filterbares Beschlussregister über alle Sitzungen und Gliederungen
+- neue Rechte `governance.view`, `governance.manage`, `governance.decisions` und `governance.minutes`
+- sämtliche Mutationen werden im bestehenden Audit-Log protokolliert
+- Browser-Installer und Navigation auf 0.10.0 aktualisiert
+- neue Migrationen verwenden ausschließlich kurze explizite Foreign-Key- und Indexnamen
+- Featuretests für Gremienbesetzung, Sitzungseinladung, Beschlussfähigkeit, Antrag/Beschluss, Aufgaben, Protokollfreigabe und Tenant-Isolation
+
 ## 0.9.0 – CAMT, Sammelbestätigungen & Steuerberater-Export
 
 - eigener Arbeitsbereich „Bankabgleich“ für strukturierte Bankimporte und offene Klärfälle
@@ -65,7 +90,7 @@
 - mandantenfähige Finanzkonten für Bank, Kasse, Verrechnung und weitere frei definierbare Konten
 - frei definierbare Einnahmen- und Ausgabenkategorien mit Standard-Steuersatz
 - unveränderliches Finanzjournal mit fortlaufenden `BU-YYYY-xxxxxx`-Buchungsnummern
-- manuelle Einnahmen- und Ausgabenbuchungen inklusive Netto-, Steuer- und Bruttobeträgen
+- manuelle Einnahmen und Ausgaben inklusive Netto-, Steuer- und Bruttobeträgen
 - Korrektur manueller Buchungen über Gegenbuchungen statt Löschung
 - automatische Journalbuchung von Rechnungzahlungen
 - Dublettenschutz pro Zahlung und Bankumsatz
