@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.11.0 – Veranstaltungen & Kommunikation
+
+- eigener Monatskalender für Veranstaltungen, Termine, Schulungen, Versammlungen, Feiern und weitere Veranstaltungstypen
+- Einzel- und Serientermine mit täglicher, wöchentlicher oder monatlicher Wiederholung
+- Serientermine behalten Dauer, Veranstaltungsdaten und organisatorische Zuordnung je Einzeltermin
+- optionale Zuordnung zu einer Organisationseinheit/Gliederung
+- Kapazitätsgrenzen, Anmeldeschluss und konfigurierbare Warteliste
+- Mitglieder, Segmente, Gliederungen oder alle aktiven Mitglieder können als Zielgruppe vorgemerkt werden
+- externe Gäste mit Name und E-Mail-Adresse
+- persönliche, zufällige RSVP-Tokens ohne Mitglieds- oder Mandanten-ID im Link
+- öffentliche Zu-/Absage ohne Benutzerkonto
+- automatische Warteliste bei voller Kapazität
+- automatische Nachrückung des ältesten Wartelisteneintrags bei frei werdenden Plätzen oder erhöhter Kapazität
+- getrennte Teilnehmer- und Anwesenheitsstatus inklusive Check-in-Zeitpunkt
+- Teilnehmerlisten als CSV und Veranstaltungstermine als ICS-Kalenderdatei
+- eigene Kommunikationszentrale mit wiederverwendbaren E-Mail-Vorlagen
+- E-Mail-Kampagnen an alle aktiven Mitglieder, dynamische Segmente, Gliederungen oder Veranstaltungseinladungen
+- Empfängerliste wird vor Versand als Snapshot eingefroren und gegen doppelte E-Mail-Adressen dedupliziert
+- shared-hosting-tauglicher Versand in kontrollierten Batches ohne permanenten Queue-Worker
+- erfolgreich versendete Empfänger werden bei Folgebatches nicht erneut angeschrieben
+- fehlgeschlagene Zustellungen können bis zu drei Mal erneut versucht werden
+- Platzhalter für Mitglied, Veranstaltung und persönlichen Rückmeldelink
+- versendete Mitglieds-E-Mails werden zusätzlich in der bestehenden Kommunikationshistorie protokolliert
+- neue Rechte `events.view`, `events.manage`, `events.registrations`, `events.attendance`, `communications.view`, `communications.manage` und `communications.send`
+- sämtliche relevanten Mutationen werden im bestehenden Audit-Log protokolliert
+- Browser-Installer und Navigation auf 0.11.0 aktualisiert
+- neue Migration verwendet ausschließlich kurze explizite Foreign-Key- und Indexnamen
+- Featuretests für Serientermine, RSVP, Kapazität/Warteliste, Kampagnen-Snapshot, Batchversand, ICS und Tenant-Isolation
+
 ## 0.10.0 – Gremien, Sitzungen & Beschlüsse
 
 - eigener Bereich „Gremien & Sitzungen“ für Vorstände, Ausschüsse, Versammlungen, Arbeitsgruppen und Beiräte
