@@ -29,7 +29,8 @@ class CustomFieldController extends Controller
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
         ]);
 
-        $key = Str::snake(Str::ascii(trim($data['key'] ?: $data['name'])));
+        $keySource = filled($data['key'] ?? null) ? $data['key'] : $data['name'];
+        $key = Str::snake(Str::ascii(trim($keySource)));
         if ($key === '') {
             $key = 'field_'.Str::lower(Str::random(6));
         }
