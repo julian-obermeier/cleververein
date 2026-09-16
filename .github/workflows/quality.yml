@@ -31,7 +31,11 @@ jobs:
           path: public/build
           if-no-files-found: error
           retention-days: 7
-      - run: ./vendor/bin/pint --test
+      - name: Diagnose member CRM Pint formatting
+        run: |
+          ./vendor/bin/pint app/Http/Controllers/MemberBulkController.php app/Http/Controllers/MemberCrmController.php
+          git diff -- app/Http/Controllers/MemberBulkController.php app/Http/Controllers/MemberCrmController.php
+          exit 1
       - run: php artisan test
       - name: Commit compiled production assets
         if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
