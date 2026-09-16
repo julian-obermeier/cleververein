@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.7.0 – Kasse, Belege & Prüfungen
+
+- private Belegablage direkt an Finanzbuchungen
+- Belegdownload nur nach Berechtigungsprüfung
+- Belege werden bei Korrekturen als ungültig markiert statt gelöscht
+- eigener Bereich „Kasse & Prüfung“
+- Kassenbuchansicht für echte Kassenkonten
+- CSV-Kassenbuchexport nach Zeitraum
+- Kassenabschlüsse mit Systembestand, gezähltem Bestand und Differenz
+- abgeschlossene Kassenzeiträume sperren rückwirkende Buchungen serverseitig
+- globale Periodensperren für abgeschlossene Buchungszeiträume
+- kontrollierte Wiederöffnung mit Audit-Protokoll
+- dokumentierte Kassenprüfungen mit Soll-/Istvergleich und Feststellungen
+- neue Rechte `finance.receipts`, `finance.cash`, `finance.periods` und `finance.audit`
+- Browser-Installer auf 0.7.0 aktualisiert
+- Featuretests für Belegstorage, Kassenabschluss, Periodensperren, Prüfungen und Tenant-Isolation
+
 ## 0.6.0 – Finanzjournal & Berichte
 
 - mandantenfähige Finanzkonten für Bank, Kasse, Verrechnung und weitere frei definierbare Konten
