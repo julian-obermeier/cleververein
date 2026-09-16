@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.9.0 – CAMT, Sammelbestätigungen & Steuerberater-Export
+
+- eigener Arbeitsbereich „Bankabgleich“ für strukturierte Bankimporte und offene Klärfälle
+- CAMT.053- und CAMT.054-XML-Import zusätzlich zum bestehenden CSV-Bankimport
+- namespace-/versionsrobuste CAMT-Verarbeitung mit Message-ID, EndToEnd-ID, Mandatsreferenz, Banktransaktionscode und Rückgabegrund
+- automatische SEPA-Rücklastschrift ausschließlich bei exakter EndToEnd-ID, eingereichtem Lastschriftlauf und passendem Betrag
+- unsichere bzw. unbekannte negative Bankumsätze bleiben bewusst ungeklärt und erzeugen keine automatische Zahlungskorrektur
+- automatisch erkannte Rücklastschrift verwendet den bestehenden revisionssicheren Korrektur- und Journalworkflow
+- Importhistorie mit CAMT-Dateityp, Nachrichtenkennung, Auto-Treffern und offenen Umsätzen
+- Sammel-Zuwendungsbestätigungen für mehrere Zuwendungen derselben Person und Anschrift
+- vollständige Positionsanlage mit Datum, Art, Zweck, Aufwandsverzicht und Einzelbetrag
+- gemeinsame `ZB-YYYY-xxxxxx`-Nummernsequenz für Einzel- und Sammelbestätigungen
+- eine Zuwendung kann nicht gleichzeitig Bestandteil einer gültigen Einzel- und Sammelbestätigung sein
+- private Sammelbestätigungs-PDFs mit Snapshot und nachvollziehbarem Storno
+- DATEV-nahe Steuerberater-Arbeitsdatei als prüfbarer CSV-Export ohne Behauptung einer DATEV-Zertifizierung
+- frei pflegbare Sachkonto-/Gegenkonto-Zuordnung an Finanzkategorien und Finanzkonten
+- optionale Beraternummer, Mandantennummer, Kontenrahmen und Kontenlänge
+- Export wird bei fehlender Kontierung verwendeter Konten/Kategorien serverseitig blockiert
+- neues Recht `finance.tax_export`
+- Browser-Installer und Navigation auf 0.9.0 aktualisiert
+- Featuretests für CAMT-Parsing, sicheren Rücklastschriftabgleich, Sammelbestätigungen und Steuerberater-Kontierung
+
 ## 0.8.0 – Spenden, Rücklastschriften & Erstattungen
 
 - eigener Bereich „Spenden & Erstattungen“ mit separaten Rechten
