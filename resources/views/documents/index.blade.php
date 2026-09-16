@@ -46,7 +46,7 @@
 
                     @if($canGenerate)
                         <form method="post" action="{{ route('documents.templates.generate', $template) }}" class="mt-5 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">@csrf
-                            <label><span class="cv-label">Mitglied</span><select class="cv-input" name="member_id"><option value="">Ohne Mitgliedsdaten</option>@foreach($members as $member)<option value="{{ $member->id }}">{{ $member->member_number }} · {{ $member->person->display_name }}</option>@endforeach</select></label>
+                            <label><span class="cv-label">Mitglied</span><select class="cv-input" name="member_id"><option value="">Ohne Mitgliedsdaten</option>@foreach($members as $member)<option value="{{ $member->id }}" @selected((string) request('member_id') === (string) $member->id)>{{ $member->member_number }} · {{ $member->person->display_name }}</option>@endforeach</select></label>
                             <label><span class="cv-label">Dokumenttitel</span><input class="cv-input" name="title" placeholder="optional"></label>
                             <div class="flex items-end"><button class="cv-button-primary w-full">PDF erzeugen</button></div>
                         </form>
@@ -54,7 +54,7 @@
 
                     <div class="mt-4 flex flex-wrap gap-2">
                         @if($canManage)<a href="{{ route('documents.templates.edit', $template) }}" class="cv-button border border-slate-300 bg-white text-slate-700">Editor öffnen</a>@endif
-                        @if($canGenerate)<a target="_blank" href="{{ route('documents.templates.preview', $template) }}" class="cv-button border border-slate-300 bg-white text-slate-700">Vorschau</a>@endif
+                        @if($canGenerate)<a target="_blank" href="{{ route('documents.templates.preview', [$template, 'member_id' => request('member_id')]) }}" class="cv-button border border-slate-300 bg-white text-slate-700">Vorschau</a>@endif
                         @if($canManage)
                             <form method="post" action="{{ route('documents.templates.duplicate', $template) }}">@csrf<button class="cv-button border border-slate-300 bg-white text-slate-700">Duplizieren</button></form>
                             <form method="post" action="{{ route('documents.templates.toggle', $template) }}">@csrf @method('patch')<button class="cv-button border border-slate-300 bg-white text-slate-700">{{ $template->is_active ? 'Deaktivieren' : 'Aktivieren' }}</button></form>
