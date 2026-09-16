@@ -27,6 +27,16 @@ class MemberManagementTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_super_admin_can_open_member_create_form_without_existing_member(): void
+    {
+        [, $user] = $this->tenantUser();
+
+        $this->actingAs($user)->get(route('members.create'))
+            ->assertOk()
+            ->assertSee('Person & Kontakt')
+            ->assertSee('Mitgliedsdaten');
+    }
+
     public function test_super_admin_can_create_member_in_current_tenant(): void
     {
         [$tenant, $user] = $this->tenantUser();
