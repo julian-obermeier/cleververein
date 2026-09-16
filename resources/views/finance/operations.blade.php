@@ -28,13 +28,17 @@
 
     <div class="mt-6 grid gap-5 xl:grid-cols-2">
         @if($canManage)
-        <section class="cv-panel p-5"><h2 class="text-lg font-bold">Haushalts-/Familienbeiträge</h2><p class="mt-1 text-sm text-slate-500">Erzeugt pro Haushalt höchstens einen Entwurf je Beitragsart und Jahr. Hauptkontakt wird Rechnungsempfänger.</p>
-            <form method="post" action="{{ route('finance.households.run') }}" class="mt-5 grid gap-3 sm:grid-cols-2">@csrf
+        <section class="cv-panel p-5"><h2 class="text-lg font-bold">Haushalts-/Familienbeiträge</h2><p class="mt-1 text-sm text-slate-500">Ein Haushaltsbeitrag wird je Haushalt nur einmal berechnet. Hauptkontakt wird Rechnungsempfänger.</p>
+            <form method="post" action="{{ route('finance.household-rates.store') }}" class="mt-5 grid gap-3 sm:grid-cols-2">@csrf
+                <label><span class="cv-label">Name *</span><input required class="cv-input" name="name" placeholder="Familienbeitrag"></label><label><span class="cv-label">Code *</span><input required class="cv-input" name="code" placeholder="FAMILIE"></label>
+                <label><span class="cv-label">Betrag *</span><input required type="number" min="0" step="0.01" class="cv-input" name="amount"></label><label><span class="cv-label">Intervall *</span><select class="cv-input" name="interval"><option value="yearly">Jährlich</option><option value="half_yearly">Halbjährlich</option><option value="quarterly">Vierteljährlich</option><option value="monthly">Monatlich</option><option value="once">Einmalig</option></select></label>
+                <label class="sm:col-span-2"><span class="cv-label">Beschreibung</span><input class="cv-input" name="description"></label><div class="sm:col-span-2 flex justify-end"><button class="cv-button border border-slate-300 bg-white text-slate-700">Haushaltsbeitrag anlegen</button></div>
+            </form>
+            <form method="post" action="{{ route('finance.households.run') }}" class="mt-5 grid gap-3 border-t border-slate-200 pt-5 sm:grid-cols-2">@csrf
                 <label><span class="cv-label">Haushaltsbeitrag *</span><select required class="cv-input" name="contribution_rate_id"><option value="">Bitte wählen</option>@foreach($householdRates as $rate)<option value="{{ $rate->id }}">{{ $rate->name }} · {{ number_format((float)$rate->amount,2,',','.') }} €</option>@endforeach</select></label>
                 <label><span class="cv-label">Beitragsjahr *</span><input required type="number" min="2000" max="2100" class="cv-input" name="year" value="{{ now()->year }}"></label>
                 <div class="sm:col-span-2 flex items-center justify-between"><span class="text-xs text-slate-500">{{ $households->count() }} Haushalt(e) vorhanden</span><button class="cv-button-primary" @disabled($householdRates->isEmpty())>Haushaltslauf starten</button></div>
             </form>
-            @if($householdRates->isEmpty())<p class="mt-3 text-sm text-amber-700">Lege im Finanz-Cockpit zuerst einen Beitragssatz mit Typ „Haushalt/Familie“ an.</p>@endif
         </section>
         @endif
 
