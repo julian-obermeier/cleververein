@@ -1,0 +1,39 @@
+name: release-package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-package.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql, openssl, gd, zip, intl
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-dev --no-interaction --prefer-dist --classmap-authoritative
+      - run: npm ci && npm run build
+      - name: Build shared-hosting package
+        run: |
+          rm -rf node_modules tests .git .github
+          rm -f .env
+          zip -rq ../cleververein-release.zip .             -x 'storage/logs/*'                'storage/framework/cache/data/*'                'storage/framework/sessions/*'                'storage/framework/views/*'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cleververein-release
+          path: ../cleververein-release.zip
+          if-no-files-found: error
+          retention-days: 3
