@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\FinanceLedgerController;
 use App\Http\Controllers\FinanceOperationsController;
+use App\Http\Controllers\FinanceTaxExportController;
 use App\Http\Controllers\HouseholdContributionController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,10 @@ Route::middleware(['installed', 'auth', 'verified', 'tenant'])->group(function (
     Route::patch('/finanzen/konten/{account}/status', [FinanceLedgerController::class, 'toggleAccount'])->name('finance.ledger.accounts.toggle');
     Route::post('/finanzen/kategorien', [FinanceLedgerController::class, 'storeCategory'])->name('finance.ledger.categories.store');
     Route::patch('/finanzen/kategorien/{category}/status', [FinanceLedgerController::class, 'toggleCategory'])->name('finance.ledger.categories.toggle');
+
+    Route::get('/finanzen/steuerberater', [FinanceTaxExportController::class, 'index'])->name('finance.tax-export.index');
+    Route::put('/finanzen/steuerberater/mapping', [FinanceTaxExportController::class, 'saveMapping'])->name('finance.tax-export.mapping');
+    Route::get('/finanzen/steuerberater/export.csv', [FinanceTaxExportController::class, 'export'])->name('finance.tax-export.csv');
 
     Route::get('/finanzen/rechnungen/{invoice}/pdf', [FinanceOperationsController::class, 'invoicePdf'])->name('finance.invoices.pdf');
     Route::post('/finanzen/rechnungen/{invoice}/gutschrift', [FinanceOperationsController::class, 'storeCredit'])->name('finance.credits.store');
