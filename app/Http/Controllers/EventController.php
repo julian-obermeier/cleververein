@@ -127,6 +127,7 @@ class EventController extends Controller
             'registration_enabled' => (bool) ($data['registration_enabled'] ?? false),
             'waitlist_enabled' => (bool) ($data['waitlist_enabled'] ?? false),
         ]);
+        $this->registrations->promoteWaitlist($event->fresh());
         $this->audit->record('event.updated', $event, old: $old, new: $event->only(array_keys($data)));
 
         return back()->with('success', 'Veranstaltung wurde aktualisiert.');
