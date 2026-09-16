@@ -16,7 +16,6 @@ use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
@@ -37,7 +36,7 @@ class MemberSpreadsheetController extends Controller
             ->get();
 
         return response()->streamDownload(function () use ($members): void {
-            $spreadsheet = new Spreadsheet();
+            $spreadsheet = new Spreadsheet;
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Mitglieder');
             $headers = ['Mitgliedsnummer', 'Vorname', 'Nachname', 'E-Mail', 'Geburtsdatum', 'Status', 'Eintritt', 'Organisation', 'Mitgliedsart', 'Telefon', 'Mobil', 'Straße', 'PLZ', 'Ort'];
@@ -77,7 +76,8 @@ class MemberSpreadsheetController extends Controller
                 $sheet->getColumnDimension($column)->setAutoSize(true);
             }
 
-            (new Xlsx($spreadsheet))->save('php://output');
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
             $spreadsheet->disconnectWorksheets();
         }, 'mitglieder-'.now()->format('Y-m-d-His').'.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -89,7 +89,7 @@ class MemberSpreadsheetController extends Controller
         $this->authorizePermission($request);
 
         return response()->streamDownload(function (): void {
-            $spreadsheet = new Spreadsheet();
+            $spreadsheet = new Spreadsheet;
             $sheet = $spreadsheet->getActiveSheet();
             $sheet->setTitle('Importvorlage');
             $headers = ['Mitgliedsnummer', 'Vorname', 'Nachname', 'E-Mail', 'Geburtsdatum', 'Status', 'Eintritt', 'Organisation', 'Mitgliedsart', 'Telefon', 'Mobil', 'Straße', 'PLZ', 'Ort'];
@@ -102,7 +102,8 @@ class MemberSpreadsheetController extends Controller
             foreach (range('A', 'N') as $column) {
                 $sheet->getColumnDimension($column)->setAutoSize(true);
             }
-            (new Xlsx($spreadsheet))->save('php://output');
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
             $spreadsheet->disconnectWorksheets();
         }, 'cleververein-mitglieder-importvorlage.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
