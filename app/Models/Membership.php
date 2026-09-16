@@ -12,7 +12,7 @@ class Membership extends Model
     use BelongsToTenant, SoftDeletes;
 
     protected $fillable = [
-        'member_id', 'organization_unit_id', 'membership_type', 'status', 'starts_at', 'ends_at', 'is_primary', 'notes',
+        'member_id', 'organization_unit_id', 'member_type_id', 'membership_type', 'status', 'starts_at', 'ends_at', 'is_primary', 'notes',
     ];
 
     protected $casts = [
@@ -29,5 +29,10 @@ class Membership extends Model
     public function organizationUnit(): BelongsTo
     {
         return $this->belongsTo(OrganizationUnit::class);
+    }
+
+    public function memberType(): BelongsTo
+    {
+        return $this->belongsTo(MemberType::class);
     }
 }
