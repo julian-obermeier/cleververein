@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\CustomFieldDefinition;
+use App\Models\FunctionAssignment;
 use App\Models\Member;
 use App\Models\MemberCommunication;
 use App\Models\MemberDocument;
 use App\Models\MemberTag;
 use App\Models\Membership;
+use App\Models\Person;
 use App\Services\Audit\AuditService;
 use App\Services\Authorization\PermissionService;
 use App\Support\Tenancy\TenantContext;
@@ -27,7 +29,8 @@ class MemberCrmController extends Controller
         private PermissionService $permissions,
         private AuditService $audit,
         private TenantContext $tenant,
-    ) {}
+    ) {
+    }
 
     public function dashboard(Request $request, Member $member): View
     {
@@ -119,7 +122,7 @@ class MemberCrmController extends Controller
         $this->authorizePermission($request, 'members.tags');
         $data = $request->validate([
             'name' => ['required', 'string', 'max:80'],
-            'color' => ['nullable', 'string', 'max:20'],
+            'color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ]);
         if (MemberTag::query()->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($data['name']))])->exists()) {
             throw ValidationException::withMessages(['name' => 'Ein Tag mit diesem Namen existiert bereits.']);
@@ -172,7 +175,7 @@ class MemberCrmController extends Controller
             'category' => ['nullable', 'string', 'max:80'],
             'document_date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string', 'max:5000'],
-            'file' => ['required', 'file', 'max:15360'],
+            'file' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,xls,xlsx,odt,ods,txt,csv', 'max:15360'],
         ]);
         $file = $request->file('file');
         $safeName = Str::uuid().'.'.($file->getClientOriginalExtension() ?: 'bin');
@@ -270,9 +273,9 @@ class MemberCrmController extends Controller
 
         $subjectPairs = [
             [Member::class, [$member->id]],
-            [\App\Models\Person::class, [$member->person_id]],
-            [\App\Models\Membership::class, $member->memberships->pluck('id')->all()],
-            [\App\Models\FunctionAssignment::class, $member->functionAssignments->pluck('id')->all()],
+            [Person::class, [$member->person_id]],
+            [Membership::class, $member->memberships->pluck('id')->all()],
+            [FunctionAssignment::class, $member->functionAssignments->pluck('id')->all()],
         ];
 
         $logs = DB::table('audit_logs')
