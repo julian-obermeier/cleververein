@@ -30,10 +30,10 @@ jobs:
         run: |
           rm -rf node_modules tests .git .github
           rm -f .env
-          zip -rq ../cleververein-release.zip .             -x 'storage/logs/*'                'storage/framework/cache/data/*'                'storage/framework/sessions/*'                'storage/framework/views/*'
+          zip -rq cleververein-release.zip . -x 'cleververein-release.zip' 'storage/logs/*' 'storage/framework/cache/data/*' 'storage/framework/sessions/*' 'storage/framework/views/*'
       - uses: actions/upload-artifact@v4
         with:
           name: cleververein-release
-          path: ../cleververein-release.zip
+          path: cleververein-release.zip
           if-no-files-found: error
           retention-days: 3
