@@ -76,7 +76,7 @@ return new class extends Migration
             Schema::create('finance_donation_collective_certificates', function (Blueprint $table): void {
                 $table->id();
                 $table->uuid('public_id')->unique();
-                $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('tenant_id');
                 $table->string('certificate_number', 80);
                 $table->date('issue_date');
                 $table->date('period_from');
@@ -86,9 +86,9 @@ return new class extends Migration
                 $table->json('donor_snapshot');
                 $table->json('recipient_snapshot');
                 $table->json('tax_snapshot');
-                $table->foreignId('issued_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->foreignId('issued_by')->nullable();
                 $table->timestamp('issued_at');
-                $table->foreignId('voided_by')->nullable()->constrained('users')->nullOnDelete();
+                $table->foreignId('voided_by')->nullable();
                 $table->timestamp('voided_at')->nullable();
                 $table->string('void_reason', 500)->nullable();
                 $table->string('pdf_disk', 40)->nullable();
@@ -100,23 +100,23 @@ return new class extends Migration
                 $table->index(['tenant_id', 'status', 'issue_date'], 'fin_collective_cert_status_idx');
             });
         }
+        $this->ensureCollectiveCertificateConstraints();
 
         if (! Schema::hasTable('finance_donation_collective_items')) {
             Schema::create('finance_donation_collective_items', function (Blueprint $table): void {
                 $table->id();
-                $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
-                $table->foreignId('collective_certificate_id')->constrained('finance_donation_collective_certificates')->cascadeOnDelete();
-                $table->foreignId('finance_donation_id')->constrained('finance_donations')->restrictOnDelete();
+                $table->foreignId('tenant_id');
+                $table->foreignId('collective_certificate_id');
+                $table->foreignId('finance_donation_id');
                 $table->date('donation_date');
                 $table->decimal('amount', 12, 2);
                 $table->string('donation_kind', 32);
                 $table->string('purpose', 500);
                 $table->boolean('expense_waiver')->default(false);
                 $table->timestamps();
-                $table->unique(['collective_certificate_id', 'finance_donation_id'], 'fin_collective_item_donation_uq');
-                $table->index(['tenant_id', 'finance_donation_id'], 'fin_collective_donation_idx');
             });
         }
+        $this->ensureCollectiveItemConstraints();
 
         $permission = [
             'key' => 'finance.tax_export',
@@ -177,6 +177,74 @@ return new class extends Migration
         }
     }
 
+    private function ensureCollectiveCertificateConstraints(): void
+    {
+        $tableName = 'finance_donation_collective_certificates';
+        if (! Schema::hasTable($tableName)) {
+            return;
+        }
+
+        if (! $this->foreignKeyExists($tableName, 'tenant_id')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->foreign('tenant_id', 'fin_coll_cert_tenant_fk')->references('id')->on('tenants')->cascadeOnDelete();
+            });
+        }
+        if (! $this->foreignKeyExists($tableName, 'issued_by')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->foreign('issued_by', 'fin_coll_cert_issued_fk')->references('id')->on('users')->nullOnDelete();
+            });
+        }
+        if (! $this->foreignKeyExists($tableName, 'voided_by')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->foreign('voided_by', 'fin_coll_cert_voided_fk')->references('id')->on('users')->nullOnDelete();
+            });
+        }
+        if (! $this->indexExists($tableName, 'fin_collective_cert_number_uq')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->unique(['tenant_id', 'certificate_number'], 'fin_collective_cert_number_uq');
+            });
+        }
+        if (! $this->indexExists($tableName, 'fin_collective_cert_status_idx')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->index(['tenant_id', 'status', 'issue_date'], 'fin_collective_cert_status_idx');
+            });
+        }
+    }
+
+    private function ensureCollectiveItemConstraints(): void
+    {
+        $tableName = 'finance_donation_collective_items';
+        if (! Schema::hasTable($tableName)) {
+            return;
+        }
+
+        if (! $this->foreignKeyExists($tableName, 'tenant_id')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->foreign('tenant_id', 'fin_coll_item_tenant_fk')->references('id')->on('tenants')->cascadeOnDelete();
+            });
+        }
+        if (! $this->foreignKeyExists($tableName, 'collective_certificate_id')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->foreign('collective_certificate_id', 'fin_coll_item_cert_fk')->references('id')->on('finance_donation_collective_certificates')->cascadeOnDelete();
+            });
+        }
+        if (! $this->foreignKeyExists($tableName, 'finance_donation_id')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->foreign('finance_donation_id', 'fin_coll_item_donation_fk')->references('id')->on('finance_donations')->restrictOnDelete();
+            });
+        }
+        if (! $this->indexExists($tableName, 'fin_collective_item_donation_uq')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->unique(['collective_certificate_id', 'finance_donation_id'], 'fin_collective_item_donation_uq');
+            });
+        }
+        if (! $this->indexExists($tableName, 'fin_collective_donation_idx')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->index(['tenant_id', 'finance_donation_id'], 'fin_collective_donation_idx');
+            });
+        }
+    }
+
     private function indexExists(string $table, string $index): bool
     {
         if (! Schema::hasTable($table)) {
@@ -184,5 +252,18 @@ return new class extends Migration
         }
 
         return collect(Schema::getIndexes($table))->contains(fn (array $item): bool => ($item['name'] ?? null) === $index);
+    }
+
+    private function foreignKeyExists(string $table, string $column): bool
+    {
+        if (! Schema::hasTable($table)) {
+            return false;
+        }
+
+        return collect(Schema::getForeignKeys($table))->contains(function (array $foreign) use ($column): bool {
+            $columns = $foreign['columns'] ?? [];
+
+            return in_array($column, $columns, true);
+        });
     }
 };
