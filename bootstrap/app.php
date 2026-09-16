@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
         then: function (): void {
             Route::middleware('web')->group(base_path('routes/finance_operations.php'));
+            Route::middleware('web')->group(base_path('routes/finance_controls.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
