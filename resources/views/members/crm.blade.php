@@ -7,6 +7,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('members.show', $member) }}" class="cv-button border border-slate-300 bg-white text-slate-700">Stammdaten</a>
+            <a href="{{ route('documents.index', ['member_id' => $member->id]) }}" class="cv-button border border-slate-300 bg-white text-slate-700">Dokument erzeugen</a>
             @if($canHistory)<a href="{{ route('members.history', $member) }}" class="cv-button border border-slate-300 bg-white text-slate-700">Änderungsverlauf</a>@endif
             <a href="{{ route('members.edit', $member) }}" class="cv-button-primary">Mitglied bearbeiten</a>
         </div>
