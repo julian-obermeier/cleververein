@@ -84,10 +84,58 @@ class InstallController extends Controller
             $person = Person::query()->create(['public_id' => Str::uuid(), 'first_name' => $data['first_name'], 'last_name' => $data['last_name'], 'email' => $data['email']]);
             $user = User::query()->create(['person_id' => $person->id, 'current_tenant_id' => $tenant->id, 'email' => $data['email'], 'password' => Hash::make($data['password']), 'email_verified_at' => now(), 'is_super_admin' => true]);
             $tenant->users()->attach($user->id, ['status' => 'active']);
+            $this->provisionTenantDefaults($tenant->id, $user->id);
         });
         file_put_contents(storage_path('app/installed'), json_encode(['version' => '0.1.0', 'installed_at' => now()->toIso8601String()], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
 
         return redirect()->route('install.show', 'finish');
+    }
+
+    private function provisionTenantDefaults(int $tenantId, int $administratorId): void
+    {
+        $types = [
+            ['name' => 'Dachverband', 'slug' => 'dachverband', 'sort_order' => 10],
+            ['name' => 'Bundesverband', 'slug' => 'bundesverband', 'sort_order' => 20],
+            ['name' => 'Landesverband', 'slug' => 'landesverband', 'sort_order' => 30],
+            ['name' => 'Bezirksverband', 'slug' => 'bezirksverband', 'sort_order' => 40],
+            ['name' => 'Kreisverband', 'slug' => 'kreisverband', 'sort_order' => 50],
+            ['name' => 'Ortsverband', 'slug' => 'ortsverband', 'sort_order' => 60],
+            ['name' => 'Verein', 'slug' => 'verein', 'sort_order' => 70],
+            ['name' => 'Abteilung / Sparte', 'slug' => 'abteilung-sparte', 'sort_order' => 80],
+            ['name' => 'Gruppe', 'slug' => 'gruppe', 'sort_order' => 90],
+        ];
+        foreach ($types as $type) {
+            DB::table('organization_types')->updateOrInsert(
+                ['tenant_id' => $tenantId, 'slug' => $type['slug']],
+                [...$type, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
+
+        DB::table('roles')->updateOrInsert(
+            ['tenant_id' => $tenantId, 'slug' => 'administrator'],
+            ['name' => 'Administrator', 'is_system' => true, 'created_at' => now(), 'updated_at' => now()],
+        );
+        $roleId = DB::table('roles')->where('tenant_id', $tenantId)->where('slug', 'administrator')->value('id');
+        $permissionIds = DB::table('permissions')->whereIn('key', [
+            'members.view', 'members.create', 'members.update', 'members.archive', 'members.memberships',
+            'organization.view', 'organization.manage',
+        ])->pluck('id');
+        foreach ($permissionIds as $permissionId) {
+            DB::table('permission_role')->insertOrIgnore(['permission_id' => $permissionId, 'role_id' => $roleId]);
+        }
+        DB::table('role_assignments')->insert([
+            'tenant_id' => $tenantId,
+            'user_id' => $administratorId,
+            'role_id' => $roleId,
+            'organization_unit_id' => null,
+            'scope' => 'organization',
+            'include_descendants' => true,
+            'valid_from' => null,
+            'valid_until' => null,
+            'granted_by' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     private function requirements(): array
