@@ -13,7 +13,8 @@ class FinanceSetting extends Model
         'creditor_name', 'street', 'postal_code', 'city', 'country', 'tax_number', 'vat_id', 'creditor_id',
         'iban', 'bic', 'payment_terms_days', 'invoice_footer', 'donation_receipts_enabled', 'tax_notice_type',
         'tax_office', 'tax_notice_date', 'tax_notice_reference', 'tax_notice_years', 'tax_exempt_purposes',
-        'membership_contributions_deductible',
+        'membership_contributions_deductible', 'datev_consultant_number', 'datev_client_number', 'datev_chart',
+        'datev_account_length',
     ];
 
     protected $casts = [
@@ -23,6 +24,7 @@ class FinanceSetting extends Model
         'donation_receipts_enabled' => 'boolean',
         'tax_notice_date' => 'date',
         'membership_contributions_deductible' => 'boolean',
+        'datev_account_length' => 'integer',
     ];
 
     public function getMaskedIbanAttribute(): ?string
