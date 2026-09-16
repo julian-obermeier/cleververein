@@ -31,11 +31,7 @@ jobs:
           path: public/build
           if-no-files-found: error
           retention-days: 7
-      - name: Diagnose document service Pint formatting
-        run: |
-          ./vendor/bin/pint app/Services/Documents/DocumentTemplateService.php
-          git diff -- app/Services/Documents/DocumentTemplateService.php
-          exit 1
+      - run: ./vendor/bin/pint --test
       - run: php artisan test
       - name: Commit compiled production assets
         if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
