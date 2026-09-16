@@ -119,6 +119,19 @@ class EventsCommunicationModuleTest extends TestCase
         $this->assertSame('completed', $campaign->fresh()->status);
     }
 
+    public function test_communication_workspace_renders_with_placeholder_examples(): void
+    {
+        [, $user] = $this->tenantUser();
+        $event = $this->event($user, null, 'Herbstversammlung');
+
+        $this->actingAs($user)->get(route('communications.index', ['event' => $event->id]))
+            ->assertOk()
+            ->assertSee('E-Mail-Vorlagen & Kampagnen')
+            ->assertSee('Einladung: {{veranstaltung.titel}}', false)
+            ->assertSee('{{mitglied.vorname}}', false)
+            ->assertSee('{{anmeldung.link}}', false);
+    }
+
     public function test_event_workspace_is_tenant_isolated(): void
     {
         [$tenantA, $userA] = $this->tenantUser('events-a');
