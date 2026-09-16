@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DocumentTemplateController;
 use App\Http\Controllers\FunctionDirectoryController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\InstallController;
@@ -75,6 +76,16 @@ Route::middleware('installed')->group(function (): void {
         Route::get('/mitglieder-export.xlsx', [MemberSpreadsheetController::class, 'export'])->name('members.export.xlsx');
         Route::get('/mitglieder-importvorlage.xlsx', [MemberSpreadsheetController::class, 'template'])->name('members.import.template.xlsx');
         Route::post('/mitglieder-import.xlsx', [MemberSpreadsheetController::class, 'import'])->name('members.import.xlsx');
+
+        Route::get('/dokumente', [DocumentTemplateController::class, 'index'])->name('documents.index');
+        Route::post('/dokumente/vorlagen', [DocumentTemplateController::class, 'store'])->name('documents.templates.store');
+        Route::get('/dokumente/vorlagen/{template}/editor', [DocumentTemplateController::class, 'edit'])->name('documents.templates.edit');
+        Route::put('/dokumente/vorlagen/{template}', [DocumentTemplateController::class, 'update'])->name('documents.templates.update');
+        Route::post('/dokumente/vorlagen/{template}/duplizieren', [DocumentTemplateController::class, 'duplicate'])->name('documents.templates.duplicate');
+        Route::patch('/dokumente/vorlagen/{template}/status', [DocumentTemplateController::class, 'toggle'])->name('documents.templates.toggle');
+        Route::get('/dokumente/vorlagen/{template}/vorschau', [DocumentTemplateController::class, 'preview'])->name('documents.templates.preview');
+        Route::post('/dokumente/vorlagen/{template}/erzeugen', [DocumentTemplateController::class, 'generate'])->name('documents.templates.generate');
+        Route::get('/dokumente/erzeugt/{document}/download', [DocumentTemplateController::class, 'download'])->name('documents.generated.download');
 
         Route::get('/mitglieder/{member}/crm', [MemberCrmController::class, 'dashboard'])->name('members.crm');
         Route::put('/mitglieder/{member}/crm/zusatzfelder', [MemberCrmController::class, 'saveCustomFields'])->name('members.crm.custom-fields.update');
