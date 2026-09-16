@@ -93,8 +93,8 @@ return new class extends Migration
                 $table->text('notes')->nullable();
                 $table->timestamps();
 
-                $table->index(['tenant_id', 'member_id', 'ends_at']);
-                $table->index(['tenant_id', 'organization_unit_id', 'function_definition_id']);
+                $table->index(['tenant_id', 'member_id', 'ends_at'], 'fn_assign_tenant_member_end_idx');
+                $table->index(['tenant_id', 'organization_unit_id', 'function_definition_id'], 'fn_assign_tenant_org_func_idx');
             });
         }
 
