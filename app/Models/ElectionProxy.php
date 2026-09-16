@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 class ElectionProxy extends Model
 {
@@ -19,6 +20,26 @@ class ElectionProxy extends Model
         'issued_at' => 'datetime',
         'revoked_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $proxy): void {
+            if (! $proxy->election_id || ! $proxy->grantor_member_id || ! $proxy->voting_weight) {
+                return;
+            }
+
+            $grantor = ElectionVoter::query()
+                ->where('election_id', $proxy->election_id)
+                ->where('member_id', $proxy->grantor_member_id)
+                ->first();
+
+            if ($grantor && (float) $proxy->voting_weight > (float) $grantor->voting_weight + 0.0005) {
+                throw ValidationException::withMessages([
+                    'voting_weight' => 'Das Vollmachtsgewicht darf das eigene Stimmgewicht des Vollmachtgebers nicht überschreiten.',
+                ]);
+            }
+        });
+    }
 
     public function election(): BelongsTo
     {
