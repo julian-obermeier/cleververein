@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureInstalled;
+use App\Http\Middleware\ResolvePublicFormTenant;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -20,12 +21,14 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::middleware('web')->group(base_path('routes/governance.php'));
             Route::middleware('web')->group(base_path('routes/events_communications.php'));
             Route::middleware('web')->group(base_path('routes/elections.php'));
+            Route::middleware('web')->group(base_path('routes/forms.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'installed' => EnsureInstalled::class,
             'tenant' => ResolveTenant::class,
+            'public-form-tenant' => ResolvePublicFormTenant::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
