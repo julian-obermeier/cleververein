@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 class ElectionCandidate extends Model
 {
@@ -19,6 +20,17 @@ class ElectionCandidate extends Model
         'accepted_at' => 'datetime',
         'withdrawn_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $candidate): void {
+            if ($candidate->getOriginal('status') === 'elected' && $candidate->status !== 'elected') {
+                throw ValidationException::withMessages([
+                    'status' => 'Eine bereits als gewählt festgestellte Kandidatur kann nicht zurückgesetzt werden.',
+                ]);
+            }
+        });
+    }
 
     public function office(): BelongsTo
     {
