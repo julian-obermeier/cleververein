@@ -86,7 +86,7 @@ class InstallController extends Controller
             $tenant->users()->attach($user->id, ['status' => 'active']);
             $this->provisionTenantDefaults($tenant->id, $user->id);
         });
-        file_put_contents(storage_path('app/installed'), json_encode(['version' => '0.2.0', 'installed_at' => now()->toIso8601String()], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
+        file_put_contents(storage_path('app/installed'), json_encode(['version' => '0.6.0', 'installed_at' => now()->toIso8601String()], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR), LOCK_EX);
 
         return redirect()->route('install.show', 'finish');
     }
@@ -137,16 +137,37 @@ class InstallController extends Controller
             );
         }
 
+        foreach ([
+            ['name' => 'Bank', 'code' => 'BANK', 'type' => 'bank', 'is_default' => true, 'sort_order' => 10],
+            ['name' => 'Kasse', 'code' => 'KASSE', 'type' => 'cash', 'is_default' => false, 'sort_order' => 20],
+            ['name' => 'Verrechnung', 'code' => 'VERRECHNUNG', 'type' => 'clearing', 'is_default' => false, 'sort_order' => 90],
+        ] as $account) {
+            DB::table('finance_accounts')->updateOrInsert(
+                ['tenant_id' => $tenantId, 'code' => $account['code']],
+                [...$account, 'currency' => 'EUR', 'opening_balance' => 0, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
+
+        foreach ([
+            ['name' => 'Mitgliedsbeiträge', 'code' => 'MITGLIEDSBEITRAEGE', 'direction' => 'income', 'sort_order' => 10],
+            ['name' => 'Spenden', 'code' => 'SPENDEN', 'direction' => 'income', 'sort_order' => 20],
+            ['name' => 'Sonstige Einnahmen', 'code' => 'SONSTIGE_EINNAHMEN', 'direction' => 'income', 'sort_order' => 90],
+            ['name' => 'Betriebsausgaben', 'code' => 'BETRIEBSAUSGABEN', 'direction' => 'expense', 'sort_order' => 110],
+            ['name' => 'Gebühren', 'code' => 'GEBUEHREN', 'direction' => 'expense', 'sort_order' => 120],
+            ['name' => 'Sonstige Ausgaben', 'code' => 'SONSTIGE_AUSGABEN', 'direction' => 'expense', 'sort_order' => 190],
+        ] as $category) {
+            DB::table('finance_categories')->updateOrInsert(
+                ['tenant_id' => $tenantId, 'code' => $category['code']],
+                [...$category, 'default_tax_rate' => 0, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            );
+        }
+
         DB::table('roles')->updateOrInsert(
             ['tenant_id' => $tenantId, 'slug' => 'administrator'],
             ['name' => 'Administrator', 'is_system' => true, 'created_at' => now(), 'updated_at' => now()],
         );
         $roleId = DB::table('roles')->where('tenant_id', $tenantId)->where('slug', 'administrator')->value('id');
-        $permissionIds = DB::table('permissions')->whereIn('key', [
-            'members.view', 'members.create', 'members.update', 'members.archive', 'members.memberships',
-            'members.master_data', 'members.households', 'members.functions', 'members.import_export',
-            'organization.view', 'organization.manage',
-        ])->pluck('id');
+        $permissionIds = DB::table('permissions')->pluck('id');
         foreach ($permissionIds as $permissionId) {
             DB::table('permission_role')->insertOrIgnore(['permission_id' => $permissionId, 'role_id' => $roleId]);
         }
