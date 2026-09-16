@@ -19,6 +19,8 @@
         ['Übersicht','dashboard','dashboard','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm8 0h8V11h-8v9Zm0-16v5h8V4h-8Z'],
         ['Mitglieder','members.index','members.index|members.create|members.show|members.edit|members.settings|members.crm|members.history','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0H5Zm14-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm1.5 2c2.2 0 4 1.8 4 4v1h-3.2a9 9 0 0 0-2.5-5h1.7Z'],
         ['Segmente','members.segments.index','members.segments.*','M4 5h16v3H4V5Zm0 6h10v3H4v-3Zm0 6h7v3H4v-3Zm12-5 2 2 4-4 1.5 1.5L18 17l-3.5-3.5L16 12Z'],
+        ['Gremien & Sitzungen','governance.index','governance.index|governance.committees.*|governance.meetings.*|governance.participants.*|governance.agenda.*|governance.motions.*|governance.minutes.*|governance.tasks.*','M4 4h16v4H4V4Zm2 6h12v10H6V10Zm2 2v2h3v-2H8Zm5 0v2h3v-2h-3Zm-5 4v2h3v-2H8Zm5 0v2h3v-2h-3Z'],
+        ['Beschlussregister','governance.resolutions.index','governance.resolutions.*','M6 3h12v3h3v15H3V6h3V3Zm2 2v2h8V5H8Zm-2 4v10h12V9H6Zm2 2h8v2H8v-2Zm0 4h6v2H8v-2Z'],
         ['Dokumente','documents.index','documents.*','M6 2h9l5 5v15H6V2Zm8 2v5h5M9 13h8v2H9v-2Zm0 4h8v2H9v-2Zm0-8h3v2H9V9Z'],
         ['Beiträge & Finanzen','finance.index','finance.index|finance.rates.*|finance.rules.*|finance.overrides.*|finance.contributions.*|finance.invoices.*|finance.sepa.store|finance.sepa.revoke','M3 5h18v3H3V5Zm2 5h14v9H5v-9Zm3 2v5h2v-5H8Zm4 0v5h4v-5h-4Z'],
         ['Finanzoperationen','finance.operations.index','finance.operations.*|finance.credits.*|finance.dunnings.pdf|finance.household-rates.*|finance.households.*|finance.sepa.batches.*','M4 4h16v4H4V4Zm0 6h16v10H4V10Zm3 2v2h4v-2H7Zm0 4v2h7v-2H7Zm9-4h2v6h-2v-6Z'],
@@ -38,7 +40,7 @@
             <a href="{{ route($route) }}" aria-current="{{ request()->routeIs(...$patternList) ? 'page' : 'false' }}" class="flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium {{ request()->routeIs(...$patternList) ? 'border-blue-400 bg-blue-600/35 text-white' : 'border-transparent text-slate-300 hover:bg-white/5 hover:text-white' }}"><svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{{ $path }}"/></svg><span>{{ $label }}</span></a>
         @endforeach
     </nav>
-    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.9.0 · CAMT & Steuerexport</span></div>
+    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.10.0 · Gremien & Beschlüsse</span></div>
 </aside>
 <div class="min-h-screen lg:pl-64">
     <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
