@@ -49,6 +49,11 @@ class FinanceInvoice extends Model
         return $this->hasMany(FinancePayment::class);
     }
 
+    public function paymentAdjustments(): HasMany
+    {
+        return $this->hasMany(FinancePaymentAdjustment::class, 'finance_invoice_id');
+    }
+
     public function dunnings(): HasMany
     {
         return $this->hasMany(FinanceDunning::class);
