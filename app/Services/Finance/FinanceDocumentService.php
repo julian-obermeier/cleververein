@@ -120,9 +120,11 @@ class FinanceDocumentService
             $cents = 0;
         }
 
-        $words = ucfirst($this->integerInGerman($euros, true)).' Euro';
+        $euroWords = $euros === 1 ? 'ein' : $this->integerInGerman($euros, true);
+        $words = ucfirst($euroWords).' Euro';
         if ($cents > 0) {
-            $words .= ' und '.$this->integerInGerman($cents, true).' Cent';
+            $centWords = $cents === 1 ? 'ein' : $this->integerInGerman($cents, true);
+            $words .= ' und '.$centWords.' Cent';
         }
 
         return $words;
