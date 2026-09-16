@@ -25,7 +25,6 @@ class CampaignService
 
         return DB::transaction(function () use ($campaign): int {
             $campaign->recipients()->delete();
-            $count = 0;
 
             if ($campaign->target_type === 'event_registrations') {
                 abort_unless($campaign->event_id, 422, 'Für Veranstaltungseinladungen fehlt die Veranstaltung.');
@@ -33,7 +32,7 @@ class CampaignService
                     ->where('event_id', $campaign->event_id)
                     ->with('member.person')
                     ->orderBy('id')
-                    ->chunkById(200, function ($registrations) use ($campaign, &$count): void {
+                    ->chunkById(200, function ($registrations) use ($campaign): void {
                         foreach ($registrations as $registration) {
                             $email = $registration->member?->person?->email ?: $registration->guest_email;
                             $name = $registration->member?->person?->display_name ?: $registration->guest_name;
@@ -41,7 +40,6 @@ class CampaignService
                                 continue;
                             }
                             $this->addRecipient($campaign, $name, $email, $registration->member_id, $registration->id);
-                            $count++;
                         }
                     });
             } else {
@@ -50,18 +48,18 @@ class CampaignService
                     'organization' => $this->audiences->query(['status' => 'active', 'organization_unit_id' => $campaign->organization_unit_id]),
                     default => $this->audiences->query(['status' => 'active']),
                 };
-                $query->with('person')->orderBy('id')->chunkById(200, function ($members) use ($campaign, &$count): void {
+                $query->with('person')->orderBy('id')->chunkById(200, function ($members) use ($campaign): void {
                     foreach ($members as $member) {
                         $email = $member->person?->email;
                         if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                             continue;
                         }
                         $this->addRecipient($campaign, $member->person->display_name, $email, $member->id, null);
-                        $count++;
                     }
                 });
             }
 
+            $count = $campaign->recipients()->count();
             $campaign->update([
                 'status' => 'prepared',
                 'recipient_count' => $count,
