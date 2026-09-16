@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.8.0 – Spenden, Rücklastschriften & Erstattungen
+
+- eigener Bereich „Spenden & Erstattungen“ mit separaten Rechten
+- Rücklastschriften und Erstattungen als unveränderliche Zahlungskorrekturen statt Änderung des ursprünglichen Zahlungseingangs
+- Rücklastschrift öffnet den wirksamen Rechnungssaldo wieder und kann Bankgebühren getrennt als Ausgabe buchen
+- Erstattungen sind auf tatsächlich vorhandenes Rechnungsguthaben begrenzt
+- Rechnungsstatus und `paid_amount` berücksichtigen Zahlungskorrekturen vollständig
+- eigenständige Zuwendungsverwaltung mit `SP-YYYY-xxxxxx`-Nummern
+- Geldzuwendungen werden automatisch in die Journal-Kategorie „Spenden“ gebucht
+- Aufwandsverzicht wird ohne künstlichen Geldfluss dokumentiert
+- steuerliche Stammdaten für Freistellungsbescheid, Körperschaftsteuerbescheid oder § 60a AO
+- Ausstellung von Zuwendungsbestätigungen nur nach ausdrücklicher Freischaltung und Vollständigkeitsprüfung
+- Altersprüfung der steuerlichen Bescheide vor Ausstellung
+- vollständiger Spender-, Empfänger- und Steuer-Snapshot je ausgestellter Bestätigung
+- private Zuwendungsbestätigungs-PDFs mit `ZB-YYYY-xxxxxx`-Nummern
+- nachvollziehbares Storno statt Löschen; neue Bestätigung erhält eine neue Nummer
+- Tenant-Scope auch bei optionalen Bankumsatzverknüpfungen
+- neue Rechte `finance.adjustments`, `finance.donations` und `finance.donation_certificates`
+- Browser-Installer auf 0.8.0 aktualisiert
+- Featuretests für Rücklastschrift, Erstattung, Spendenjournal, Bescheidgültigkeit, private PDFs, Snapshots, Storno und Tenant-Isolation
+
 ## 0.7.0 – Kasse, Belege & Prüfungen
 
 - private Belegablage direkt an Finanzbuchungen
