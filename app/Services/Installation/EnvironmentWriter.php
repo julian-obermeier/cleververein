@@ -30,7 +30,14 @@ class EnvironmentWriter
 
     private function encode(string $value): string
     {
-        if ($value === '' || preg_match('/[\s#="\\]/', $value)) {
+        $requiresQuotes = $value === ''
+            || preg_match('/\s/u', $value) === 1
+            || str_contains($value, '#')
+            || str_contains($value, '=')
+            || str_contains($value, '"')
+            || str_contains($value, chr(92));
+
+        if ($requiresQuotes) {
             return '"'.addcslashes($value, '\\"').'"';
         }
 
