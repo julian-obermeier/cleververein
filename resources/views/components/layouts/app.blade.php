@@ -24,6 +24,8 @@
         ['Wahlen & Delegierte','elections.index','elections.*|delegates.*','M4 4h16v4H4V4Zm2 6h12v10H6V10Zm2 2h8v2H8v-2Zm0 4h5v2H8v-2Zm9-5 2 2 4-4 1.5 1.5L19 17l-3.5-3.5L17 11Z'],
         ['Veranstaltungen','events.index','events.*','M7 2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2Zm13 8H4v10h16V10ZM4 8h16V6H4v2Z'],
         ['Kommunikation','communications.index','communications.*','M3 5h18v14H3V5Zm2 2v1l7 5 7-5V7H5Zm14 10v-6l-7 5-7-5v6h14Z'],
+        ['Formulare & Workflows','forms.index','forms.index|forms.edit|forms.fill|forms.fields.*|forms.workflows.*|forms.workflow-steps.*','M4 3h16v18H4V3Zm3 4h10v2H7V7Zm0 4h4v2H7v-2Zm0 4h10v2H7v-2Zm7-4 1.5 1.5L18 10l1.5 1.5-4 4L12.5 13l1.5-2Z'],
+        ['Formular-Eingang','forms.submissions.index','forms.submissions.*|forms.attachments.*','M3 4h18v16H3V4Zm2 2v9h4l2 3h2l2-3h4V6H5Zm2 2h10v5h-3l-2 3-2-3H7V8Z'],
         ['Dokumente','documents.index','documents.*','M6 2h9l5 5v15H6V2Zm8 2v5h5M9 13h8v2H9v-2Zm0 4h8v2H9v-2Zm0-8h3v2H9V9Z'],
         ['Beiträge & Finanzen','finance.index','finance.index|finance.rates.*|finance.rules.*|finance.overrides.*|finance.contributions.*|finance.invoices.*|finance.sepa.store|finance.sepa.revoke','M3 5h18v3H3V5Zm2 5h14v9H5v-9Zm3 2v5h2v-5H8Zm4 0v5h4v-5h-4Z'],
         ['Finanzoperationen','finance.operations.index','finance.operations.*|finance.credits.*|finance.dunnings.pdf|finance.household-rates.*|finance.households.*|finance.sepa.batches.*','M4 4h16v4H4V4Zm0 6h16v10H4V10Zm3 2v2h4v-2H7Zm0 4v2h7v-2H7Zm9-4h2v6h-2v-6Z'],
@@ -43,7 +45,7 @@
             <a href="{{ route($route) }}" aria-current="{{ request()->routeIs(...$patternList) ? 'page' : 'false' }}" class="flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium {{ request()->routeIs(...$patternList) ? 'border-blue-400 bg-blue-600/35 text-white' : 'border-transparent text-slate-300 hover:bg-white/5 hover:text-white' }}"><svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{{ $path }}"/></svg><span>{{ $label }}</span></a>
         @endforeach
     </nav>
-    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.12.0 · Wahlen & Delegierte</span></div>
+    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.13.0 · Formulare & Workflows</span></div>
 </aside>
 <div class="min-h-screen lg:pl-64">
     <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
