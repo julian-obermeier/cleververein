@@ -5,9 +5,11 @@ namespace App\Services\Finance;
 use App\Models\BankTransaction;
 use App\Models\FinanceAccount;
 use App\Models\FinanceCategory;
+use App\Models\FinanceDonation;
 use App\Models\FinanceEntry;
 use App\Models\FinanceInvoice;
 use App\Models\FinancePayment;
+use App\Models\FinancePaymentAdjustment;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -137,6 +139,98 @@ class FinanceLedgerService
             'created_by' => $userId,
             'posted_at' => now(),
             'notes' => $payment->notes,
+        ]);
+    }
+
+    public function postPaymentAdjustment(FinancePaymentAdjustment $adjustment, FinancePayment $payment, int $userId): array
+    {
+        $this->ensureDefaults();
+        $original = FinanceEntry::query()->where('finance_payment_id', $payment->id)->firstOrFail();
+        $this->controls->assertOpen($adjustment->adjustment_date->toDateString(), $original->finance_account_id);
+
+        $ratio = (float) $payment->amount > 0 ? min(1, (float) $adjustment->amount / (float) $payment->amount) : 0;
+        $net = round(-1 * (float) $original->net_amount * $ratio, 2);
+        $tax = round(-1 * (float) $original->tax_amount * $ratio, 2);
+        $gross = round(-1 * (float) $adjustment->amount, 2);
+        $label = $adjustment->type === 'chargeback' ? 'Rücklastschrift' : 'Erstattung';
+
+        $reversal = $this->create([
+            'booking_date' => $adjustment->adjustment_date->toDateString(),
+            'direction' => 'income',
+            'finance_account_id' => $original->finance_account_id,
+            'finance_category_id' => $original->finance_category_id,
+            'member_id' => $adjustment->member_id,
+            'finance_invoice_id' => $adjustment->finance_invoice_id,
+            'bank_transaction_id' => $adjustment->bank_transaction_id,
+            'net_amount' => $net,
+            'tax_amount' => $tax,
+            'gross_amount' => $gross,
+            'tax_rate' => $original->tax_rate,
+            'description' => $label.' zu '.$original->description,
+            'reference' => $adjustment->reference ?: $payment->reference,
+            'source_type' => 'payment_adjustment',
+            'source_id' => $adjustment->id,
+            'created_by' => $userId,
+            'posted_at' => now(),
+            'notes' => $adjustment->reason,
+        ]);
+
+        $fee = null;
+        if ((float) $adjustment->fee_amount > 0) {
+            $feeCategory = FinanceCategory::query()->where('code', 'GEBUEHREN')->firstOrFail();
+            $fee = $this->create([
+                'booking_date' => $adjustment->adjustment_date->toDateString(),
+                'direction' => 'expense',
+                'finance_account_id' => $original->finance_account_id,
+                'finance_category_id' => $feeCategory->id,
+                'member_id' => $adjustment->member_id,
+                'finance_invoice_id' => $adjustment->finance_invoice_id,
+                'net_amount' => (float) $adjustment->fee_amount,
+                'tax_amount' => 0,
+                'gross_amount' => (float) $adjustment->fee_amount,
+                'tax_rate' => 0,
+                'description' => 'Rücklastschriftgebühr'.($payment->invoice?->invoice_number ? ' '.$payment->invoice->invoice_number : ''),
+                'reference' => $adjustment->reference,
+                'source_type' => 'chargeback_fee',
+                'source_id' => $adjustment->id,
+                'created_by' => $userId,
+                'posted_at' => now(),
+                'notes' => $adjustment->reason,
+            ]);
+        }
+
+        return [$reversal, $fee];
+    }
+
+    public function postDonation(FinanceDonation $donation, int $userId): ?FinanceEntry
+    {
+        if ($donation->expense_waiver) {
+            return null;
+        }
+
+        $this->ensureDefaults();
+        $account = FinanceAccount::query()->where('is_active', true)->findOrFail($donation->finance_account_id);
+        $category = FinanceCategory::query()->where('code', 'SPENDEN')->where('is_active', true)->firstOrFail();
+        $this->controls->assertOpen($donation->donation_date->toDateString(), $account->id);
+
+        return $this->create([
+            'booking_date' => $donation->donation_date->toDateString(),
+            'direction' => 'income',
+            'finance_account_id' => $account->id,
+            'finance_category_id' => $category->id,
+            'member_id' => $donation->member_id,
+            'bank_transaction_id' => $donation->bank_transaction_id,
+            'net_amount' => (float) $donation->amount,
+            'tax_amount' => 0,
+            'gross_amount' => (float) $donation->amount,
+            'tax_rate' => 0,
+            'description' => 'Spende '.$donation->donation_number.' · '.$donation->donor_name,
+            'reference' => $donation->reference,
+            'source_type' => 'donation',
+            'source_id' => $donation->id,
+            'created_by' => $userId,
+            'posted_at' => now(),
+            'notes' => $donation->purpose,
         ]);
     }
 
