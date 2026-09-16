@@ -10,7 +10,6 @@ use App\Models\FinancePayment;
 use App\Models\FinancePaymentAdjustment;
 use App\Models\FinanceSetting;
 use App\Support\Tenancy\TenantContext;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,12 +26,12 @@ class FinanceRecoveryDonationService
     {
         $payment->loadMissing(['invoice.creditNotes', 'adjustments']);
         $invoice = $payment->invoice;
-        if (! $invoice) {
+        if ($invoice === null) {
             throw ValidationException::withMessages(['payment' => 'Der Zahlungseingang ist keiner Rechnung mehr zugeordnet.']);
         }
 
         $type = (string) $data['type'];
-        if (! in_array($type, ['chargeback', 'refund'], true)) {
+        if (in_array($type, ['chargeback', 'refund'], true) === false) {
             throw ValidationException::withMessages(['type' => 'Unbekannte Zahlungskorrektur.']);
         }
 
@@ -257,7 +256,7 @@ class FinanceRecoveryDonationService
         if ($donation->certificates->contains('status', 'issued')) {
             throw ValidationException::withMessages(['donation' => 'Für diese Zuwendung existiert bereits eine gültige Zuwendungsbestätigung.']);
         }
-        if (! filled($donation->donor_street) || ! filled($donation->donor_postal_code) || ! filled($donation->donor_city)) {
+        if (filled($donation->donor_street) === false || filled($donation->donor_postal_code) === false || filled($donation->donor_city) === false) {
             throw ValidationException::withMessages(['donor' => 'Für eine Zuwendungsbestätigung wird die vollständige Anschrift des Zuwendenden benötigt.']);
         }
     }
@@ -265,7 +264,7 @@ class FinanceRecoveryDonationService
     private function validatedDonationSettings(iterable $donations): FinanceSetting
     {
         $settings = FinanceSetting::query()->first();
-        if (! $settings?->donation_receipt_ready) {
+        if (($settings?->donation_receipt_ready ?? false) === false) {
             throw ValidationException::withMessages(['settings' => 'Die steuerlichen Stammdaten für Zuwendungsbestätigungen sind noch nicht vollständig und ausdrücklich aktiviert.']);
         }
         $maxAgeYears = $settings->tax_notice_type === '60a' ? 3 : 5;
@@ -275,7 +274,7 @@ class FinanceRecoveryDonationService
             ]);
         }
         foreach ($donations as $donation) {
-            if ($donation->donation_kind === 'membership_contribution' && ! $settings->membership_contributions_deductible) {
+            if ($donation->donation_kind === 'membership_contribution' && $settings->membership_contributions_deductible === false) {
                 throw ValidationException::withMessages(['donation' => 'Mitgliedsbeiträge sind in den Finanzstammdaten nicht als steuerlich abzugsfähig freigegeben.']);
             }
         }
