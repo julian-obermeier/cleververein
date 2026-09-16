@@ -49,4 +49,10 @@ class Member extends Model
     {
         return $this->hasMany(FunctionAssignment::class);
     }
+
+    public function customFieldValues(): HasMany
+    {
+        return $this->hasMany(CustomFieldValue::class, 'entity_id')
+            ->where('entity_type', 'member');
+    }
 }
