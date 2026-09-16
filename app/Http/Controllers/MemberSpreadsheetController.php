@@ -139,6 +139,7 @@ class MemberSpreadsheetController extends Controller
             $values = array_combine($headers, array_slice(array_pad($row, count($headers), null), 0, count($headers)));
             if (! is_array($values)) {
                 $errors++;
+
                 continue;
             }
 
