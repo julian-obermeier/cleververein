@@ -31,7 +31,11 @@ jobs:
           path: public/build
           if-no-files-found: error
           retention-days: 7
-      - run: ./vendor/bin/pint --test
+      - name: Diagnose EventController formatting
+        run: |
+          ./vendor/bin/pint app/Http/Controllers/EventController.php
+          git diff -- app/Http/Controllers/EventController.php
+          exit 1
       - run: php artisan test
       - name: Commit compiled production assets
         if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
