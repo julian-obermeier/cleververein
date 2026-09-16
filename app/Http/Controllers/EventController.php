@@ -227,7 +227,7 @@ class EventController extends Controller
     public function ics(Request $request, Event $event): Response
     {
         $this->authorizePermission($request, 'events.view', $event->organization_unit_id);
-        $escape = fn (?string $value) => str_replace(["\\", ";", ",", "\r", "\n"], ["\\\\", '\\;', '\\,', '', '\\n'], (string) $value);
+        $escape = fn (?string $value) => str_replace(['\\', ';', ',', "\r", "\n"], ['\\\\', '\\;', '\\,', '', '\\n'], (string) $value);
         $body = implode("\r\n", [
             'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//cleververein//Event//DE', 'CALSCALE:GREGORIAN',
             'BEGIN:VEVENT', 'UID:'.$event->public_id.'@cleververein',
