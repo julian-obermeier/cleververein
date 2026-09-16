@@ -9,6 +9,7 @@ use App\Services\Authorization\PermissionService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -104,20 +105,22 @@ class HouseholdController extends Controller
         ]);
         $member = Member::query()->findOrFail($data['member_id']);
 
-        if ((bool) ($data['is_primary_contact'] ?? false)) {
-            $household->members()->updateExistingPivot(
-                $household->members()->pluck('members.id')->all(),
-                ['is_primary_contact' => false],
-            );
-        }
+        DB::transaction(function () use ($household, $member, $data): void {
+            if ((bool) ($data['is_primary_contact'] ?? false)) {
+                DB::table('household_members')
+                    ->where('tenant_id', $this->tenant->id())
+                    ->where('household_id', $household->id)
+                    ->update(['is_primary_contact' => false]);
+            }
 
-        $household->members()->syncWithoutDetaching([
-            $member->id => [
-                'tenant_id' => $this->tenant->id(),
-                'relationship' => $data['relationship'] ?? null,
-                'is_primary_contact' => (bool) ($data['is_primary_contact'] ?? false),
-            ],
-        ]);
+            $household->members()->syncWithoutDetaching([
+                $member->id => [
+                    'tenant_id' => $this->tenant->id(),
+                    'relationship' => $data['relationship'] ?? null,
+                    'is_primary_contact' => (bool) ($data['is_primary_contact'] ?? false),
+                ],
+            ]);
+        });
         $this->audit->record('household.member_added', $household, new: ['member_id' => $member->id]);
 
         return back()->with('success', 'Mitglied wurde dem Haushalt zugeordnet.');
