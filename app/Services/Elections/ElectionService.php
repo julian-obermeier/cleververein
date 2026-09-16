@@ -81,19 +81,26 @@ class ElectionService
                             ->orWhereNull('receiving_organization_unit_id');
                     });
                 })
-                ->get();
+                ->get()
+                ->groupBy('member_id');
 
-            foreach ($mandates as $mandate) {
-                $voter = ElectionVoter::query()->firstOrCreate(
-                    ['election_id' => $election->id, 'member_id' => $mandate->member_id],
+            foreach ($mandates as $memberId => $memberMandates) {
+                $weight = round($memberMandates->sum(fn (DelegateMandate $mandate) => (float) $mandate->voting_weight), 3);
+                $existing = ElectionVoter::query()
+                    ->where('election_id', $election->id)
+                    ->where('member_id', $memberId)
+                    ->first();
+                $voter = ElectionVoter::query()->updateOrCreate(
+                    ['election_id' => $election->id, 'member_id' => $memberId],
                     [
-                        'delegate_mandate_id' => $mandate->id,
+                        'delegate_mandate_id' => $memberMandates->count() === 1 ? $memberMandates->first()->id : null,
                         'source' => 'delegate',
-                        'voting_weight' => $mandate->voting_weight,
-                        'status' => 'eligible',
+                        'voting_weight' => $weight,
+                        'status' => $existing?->status ?? 'eligible',
+                        'checked_in_at' => $existing?->checked_in_at,
                     ],
                 );
-                if ($voter->wasRecentlyCreated) {
+                if (! $existing && $voter->exists) {
                     $created++;
                 }
             }
@@ -109,11 +116,13 @@ class ElectionService
                 ->push($election->organization_unit_id)
                 ->unique()
                 ->values();
-            $members->whereHas('memberships', function ($query) use ($organizationIds): void {
+            $electionDate = $election->election_date->toDateString();
+            $members->whereHas('memberships', function ($query) use ($organizationIds, $electionDate): void {
                 $query->whereIn('organization_unit_id', $organizationIds)
                     ->where('status', 'active')
-                    ->where(function ($period): void {
-                        $period->whereNull('ends_at')->orWhereDate('ends_at', '>=', now()->toDateString());
+                    ->whereDate('starts_at', '<=', $electionDate)
+                    ->where(function ($period) use ($electionDate): void {
+                        $period->whereNull('ends_at')->orWhereDate('ends_at', '>=', $electionDate);
                     });
             });
         }
@@ -141,6 +150,12 @@ class ElectionService
             }
             if ($lockedOffice->rounds()->where('status', 'open')->exists()) {
                 throw ValidationException::withMessages(['round' => 'Für dieses Amt ist bereits ein Wahlgang geöffnet.']);
+            }
+            if ($lockedOffice->candidates()->where('status', 'accepted')->count() === 0) {
+                throw ValidationException::withMessages(['candidates' => 'Vor dem Wahlgang muss mindestens eine angenommene Kandidatur vorhanden sein.']);
+            }
+            if ($lockedOffice->candidates()->where('status', 'elected')->count() >= $lockedOffice->seats) {
+                throw ValidationException::withMessages(['round' => 'Für dieses Amt sind bereits alle Sitze entschieden.']);
             }
 
             $roundNumber = ((int) $lockedOffice->rounds()->max('round_number')) + 1;
@@ -184,9 +199,15 @@ class ElectionService
             }
 
             $office = $round->office()->with('election')->firstOrFail();
-            $candidates = $office->candidates()->whereIn('status', ['nominated', 'accepted'])->with('member.person')->get();
+            $alreadyElected = $office->candidates()->where('status', 'elected')->count();
+            $remainingSeats = max(0, $office->seats - $alreadyElected);
+            if ($remainingSeats === 0) {
+                throw ValidationException::withMessages(['round' => 'Für dieses Amt sind bereits alle Sitze entschieden.']);
+            }
+
+            $candidates = $office->candidates()->where('status', 'accepted')->with('member.person')->get();
             if ($candidates->isEmpty()) {
-                throw ValidationException::withMessages(['candidates' => 'Für dieses Amt sind keine wählbaren Kandidaturen vorhanden.']);
+                throw ValidationException::withMessages(['candidates' => 'Für dieses Amt sind keine angenommenen Kandidaturen mehr vorhanden.']);
             }
 
             $normalizedVotes = [];
@@ -212,7 +233,7 @@ class ElectionService
                 'eligible_weight' => $eligibleWeight,
                 default => $candidateWeight,
             };
-            $decision = $this->determineWinners($office, $normalizedVotes, round($basis, 3));
+            $decision = $this->determineWinners($office, $normalizedVotes, round($basis, 3), $remainingSeats);
 
             ElectionCandidateResult::query()->where('election_round_id', $round->id)->delete();
             $rank = 0;
@@ -232,13 +253,24 @@ class ElectionService
                 $previousVotes = $votes;
             }
 
+            if ($decision['winner_ids'] !== []) {
+                ElectionCandidate::query()->whereIn('id', $decision['winner_ids'])->update([
+                    'status' => 'elected',
+                    'updated_at' => now(),
+                ]);
+            }
+            $totalElected = $office->candidates()->where('status', 'elected')->count();
+            $resultStatus = $totalElected >= $office->seats
+                ? 'decided'
+                : ($decision['status'] === 'decided' ? 'runoff' : $decision['status']);
+
             $round->update([
                 'status' => 'closed',
                 'eligible_weight' => $eligibleWeight,
                 'cast_weight' => $castWeight,
                 'invalid_weight' => $invalidWeight,
                 'abstain_weight' => $abstainWeight,
-                'result_status' => $decision['status'],
+                'result_status' => $resultStatus,
                 'closed_at' => now(),
                 'finalized_by' => $userId,
             ]);
@@ -255,15 +287,16 @@ class ElectionService
                 throw ValidationException::withMessages(['election' => 'Diese Wahl wurde bereits endgültig festgestellt.']);
             }
 
-            $election->load('offices.rounds.results.candidate.member.person');
+            $election->load('offices.candidates');
             if ($election->offices->isEmpty()) {
                 throw ValidationException::withMessages(['offices' => 'Vor der Feststellung muss mindestens ein Amt angelegt sein.']);
             }
 
             foreach ($election->offices as $office) {
-                $decidedRound = $office->rounds->where('result_status', 'decided')->sortByDesc('round_number')->first();
-                $electedCount = $decidedRound?->results?->where('is_elected', true)->count() ?? 0;
-                if (! $decidedRound || $electedCount < $office->seats) {
+                if ($office->rounds()->where('status', 'open')->exists()) {
+                    throw ValidationException::withMessages(['election' => "Für das Amt „{$office->name}“ ist noch ein Wahlgang geöffnet."]);
+                }
+                if ($office->candidates->where('status', 'elected')->count() < $office->seats) {
                     throw ValidationException::withMessages(['election' => "Das Amt „{$office->name}“ ist noch nicht vollständig entschieden."]);
                 }
             }
@@ -313,26 +346,26 @@ class ElectionService
         ]);
     }
 
-    private function determineWinners(ElectionOffice $office, array $votes, float $basis): array
+    private function determineWinners(ElectionOffice $office, array $votes, float $basis, int $remainingSeats): array
     {
         arsort($votes, SORT_NUMERIC);
         if ($office->majority_type === 'highest_votes' || $office->majority_type === 'simple') {
             $candidateIds = array_keys($votes);
-            if (count($candidateIds) < $office->seats) {
+            if (count($candidateIds) < $remainingSeats) {
                 return ['status' => 'no_result', 'winner_ids' => []];
             }
-            $cutoff = array_values($votes)[$office->seats - 1] ?? null;
+            $cutoff = array_values($votes)[$remainingSeats - 1] ?? null;
             if ($cutoff === null || $cutoff <= 0) {
                 return ['status' => 'no_result', 'winner_ids' => []];
             }
             $above = array_keys(array_filter($votes, fn ($value) => $value > $cutoff + 0.0005));
             $atCutoff = array_keys(array_filter($votes, fn ($value) => abs($value - $cutoff) <= 0.0005));
-            $remainingSeats = $office->seats - count($above);
-            if (count($atCutoff) > $remainingSeats) {
+            $seatsAtCutoff = $remainingSeats - count($above);
+            if (count($atCutoff) > $seatsAtCutoff) {
                 return ['status' => 'runoff', 'winner_ids' => array_map('intval', $above)];
             }
 
-            return ['status' => 'decided', 'winner_ids' => array_map('intval', array_slice($candidateIds, 0, $office->seats))];
+            return ['status' => 'decided', 'winner_ids' => array_map('intval', array_slice($candidateIds, 0, $remainingSeats))];
         }
 
         if ($basis <= 0) {
@@ -350,28 +383,31 @@ class ElectionService
             }
         }
 
-        if (count($qualified) < $office->seats) {
-            return ['status' => 'runoff', 'winner_ids' => array_slice(array_keys($qualified), 0, $office->seats)];
+        if ($qualified === []) {
+            return ['status' => 'runoff', 'winner_ids' => []];
+        }
+        if (count($qualified) <= $remainingSeats) {
+            return [
+                'status' => count($qualified) === $remainingSeats ? 'decided' : 'runoff',
+                'winner_ids' => array_map('intval', array_keys($qualified)),
+            ];
         }
 
-        $winners = array_slice(array_keys($qualified), 0, $office->seats);
-        if (count($qualified) > $office->seats) {
-            $values = array_values($qualified);
-            $cutoff = $values[$office->seats - 1];
-            $next = $values[$office->seats] ?? null;
-            if ($next !== null && abs($cutoff - $next) <= 0.0005) {
-                return ['status' => 'runoff', 'winner_ids' => array_map('intval', array_slice($winners, 0, max(0, $office->seats - 1)))];
-            }
+        $values = array_values($qualified);
+        $cutoff = $values[$remainingSeats - 1];
+        $above = array_keys(array_filter($qualified, fn ($value) => $value > $cutoff + 0.0005));
+        $atCutoff = array_keys(array_filter($qualified, fn ($value) => abs($value - $cutoff) <= 0.0005));
+        $seatsAtCutoff = $remainingSeats - count($above);
+        if (count($atCutoff) > $seatsAtCutoff) {
+            return ['status' => 'runoff', 'winner_ids' => array_map('intval', $above)];
         }
 
-        return ['status' => 'decided', 'winner_ids' => array_map('intval', $winners)];
+        return ['status' => 'decided', 'winner_ids' => array_map('intval', array_slice(array_keys($qualified), 0, $remainingSeats))];
     }
 
     private function syncOfficeAssignments(ElectionOffice $office): void
     {
-        $round = $office->rounds()->where('result_status', 'decided')->orderByDesc('round_number')->with('results')->firstOrFail();
-        $winnerIds = $round->results->where('is_elected', true)->pluck('election_candidate_id');
-        $memberIds = ElectionCandidate::query()->whereIn('id', $winnerIds)->pluck('member_id');
+        $memberIds = $office->candidates()->where('status', 'elected')->pluck('member_id');
         $startsAt = $office->term_starts_at ?: $office->election->election_date;
         $endPrevious = $startsAt->copy()->subDay()->toDateString();
 
