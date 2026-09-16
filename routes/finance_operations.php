@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FinanceBankImportController;
 use App\Http\Controllers\FinanceLedgerController;
 use App\Http\Controllers\FinanceOperationsController;
 use App\Http\Controllers\FinanceTaxExportController;
@@ -35,7 +36,7 @@ Route::middleware(['installed', 'auth', 'verified', 'tenant'])->group(function (
     Route::get('/finanzen/sepa-laeufe/{batch}/download', [FinanceOperationsController::class, 'downloadSepa'])->name('finance.sepa.batches.download');
     Route::patch('/finanzen/sepa-laeufe/{batch}/eingereicht', [FinanceOperationsController::class, 'submitSepa'])->name('finance.sepa.batches.submit');
 
-    Route::post('/finanzen/bankimport', [FinanceOperationsController::class, 'importBank'])->name('finance.bank.import');
+    Route::post('/finanzen/bankimport', [FinanceBankImportController::class, 'store'])->name('finance.bank.import');
     Route::post('/finanzen/bankumsatz/{transaction}/zuordnen', [FinanceOperationsController::class, 'assignBank'])->name('finance.bank.assign');
     Route::patch('/finanzen/bankumsatz/{transaction}/ignorieren', [FinanceOperationsController::class, 'ignoreBank'])->name('finance.bank.ignore');
 });
