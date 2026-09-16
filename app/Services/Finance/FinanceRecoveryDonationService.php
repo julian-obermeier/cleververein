@@ -132,6 +132,12 @@ class FinanceRecoveryDonationService
         if (! $settings?->donation_receipt_ready) {
             throw ValidationException::withMessages(['settings' => 'Die steuerlichen Stammdaten für Zuwendungsbestätigungen sind noch nicht vollständig und ausdrücklich aktiviert.']);
         }
+        $maxAgeYears = $settings->tax_notice_type === '60a' ? 3 : 5;
+        if ($settings->tax_notice_date->lt(now()->subYears($maxAgeYears)->startOfDay())) {
+            throw ValidationException::withMessages([
+                'settings' => 'Der hinterlegte steuerliche Bescheid ist für die Ausstellung von Zuwendungsbestätigungen zu alt. Bitte hinterlegen Sie einen aktuellen Bescheid.',
+            ]);
+        }
         if ($donation->donation_kind === 'membership_contribution' && ! $settings->membership_contributions_deductible) {
             throw ValidationException::withMessages(['donation' => 'Mitgliedsbeiträge sind in den Finanzstammdaten nicht als steuerlich abzugsfähig freigegeben.']);
         }
