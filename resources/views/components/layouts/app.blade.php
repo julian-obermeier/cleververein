@@ -24,6 +24,7 @@
         ['Finanzoperationen','finance.operations.index','finance.operations.*|finance.credits.*|finance.dunnings.pdf|finance.household-rates.*|finance.households.*|finance.sepa.batches.*|finance.bank.*','M4 4h16v4H4V4Zm0 6h16v10H4V10Zm3 2v2h4v-2H7Zm0 4v2h7v-2H7Zm9-4h2v6h-2v-6Z'],
         ['Finanzjournal','finance.ledger.index','finance.ledger.*','M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 4v2h10V7H7Zm0 4v2h4v-2H7Zm6 0v2h4v-2h-4Zm-6 4v2h4v-2H7Zm6 0v2h4v-2h-4Z'],
         ['Kasse & Prüfung','finance.controls.index','finance.controls.*|finance.receipts.*|finance.cash.*|finance.periods.*|finance.cash-audits.*','M4 4h16v16H4V4Zm3 3v3h10V7H7Zm0 6v4h4v-4H7Zm7 0v4h3v-4h-3Z'],
+        ['Spenden & Erstattungen','finance.recovery.index','finance.recovery.*|finance.payment-adjustments.*|finance.donations.*|finance.donation-certificates.*','M12 21s-7-4.35-7-10A4 4 0 0 1 12 7a4 4 0 0 1 7 0c0 5.65-7 10-7 10Zm-1-8H8v-2h3V8h2v3h3v2h-3v3h-2v-3Z'],
         ['Haushalte','members.households.index','members.households.*','M4 11 12 3 20 11v9a1 1 0 0 1-1 1h-5v-6h-4v6H9a1 1 0 0 1-1-1v-9Zm5-4V4h6v3l-3-2-3 2Z'],
         ['Ämter & Funktionen','members.functions.index','members.functions.*','M12 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 21v-2a7 7 0 0 1 14 0v2H5Zm14-13h2v5h-2V8Zm-2 2h6v2h-6v-2Z'],
         ['Organisation','organization.index','organization.*','M4 3h7v6H4V3Zm9 0h7v6h-7V3ZM4 15h7v6H4v-6Zm9 0h7v6h-7v-6ZM7 9v3h10V9h2v5H5V9h2Z'],
@@ -34,7 +35,7 @@
             <a href="{{ route($route) }}" aria-current="{{ request()->routeIs(...$patternList) ? 'page' : 'false' }}" class="flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium {{ request()->routeIs(...$patternList) ? 'border-blue-400 bg-blue-600/35 text-white' : 'border-transparent text-slate-300 hover:bg-white/5 hover:text-white' }}"><svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{{ $path }}"/></svg><span>{{ $label }}</span></a>
         @endforeach
     </nav>
-    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.7.0 · Kasse & Prüfung</span></div>
+    <div class="border-t border-white/10 p-3 text-sm text-slate-400">Hilfe & Support<br><span class="text-xs">Version 0.8.0 · Spenden & Erstattungen</span></div>
 </aside>
 <div class="min-h-screen lg:pl-64">
     <header class="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
