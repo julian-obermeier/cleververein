@@ -56,7 +56,9 @@ class FinanceService
             ->where('status', 'active')
             ->sortByDesc('is_primary')
             ->first() ?? $member->memberships->sortByDesc('is_primary')->first();
-        $age = $member->person?->birth_date?->age;
+        $age = $member->person?->birth_date
+            ? (int) $member->person->birth_date->diffInYears($date)
+            : null;
 
         $rules = ContributionRule::query()
             ->with('rate')
@@ -171,30 +173,27 @@ class FinanceService
 
         return DB::transaction(function () use ($invoice, $userId): FinanceInvoice {
             $year = (int) ($invoice->invoice_date?->format('Y') ?: now()->year);
+
+            DB::table('finance_sequences')->insertOrIgnore([
+                'tenant_id' => $this->tenant->id(),
+                'sequence_key' => 'invoice',
+                'year' => $year,
+                'next_value' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             $sequence = DB::table('finance_sequences')
                 ->where('tenant_id', $this->tenant->id())
                 ->where('sequence_key', 'invoice')
                 ->where('year', $year)
                 ->lockForUpdate()
-                ->first();
-
-            if (! $sequence) {
-                DB::table('finance_sequences')->insert([
-                    'tenant_id' => $this->tenant->id(),
-                    'sequence_key' => 'invoice',
-                    'year' => $year,
-                    'next_value' => 2,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-                $number = 1;
-            } else {
-                $number = (int) $sequence->next_value;
-                DB::table('finance_sequences')->where('id', $sequence->id)->update([
-                    'next_value' => $number + 1,
-                    'updated_at' => now(),
-                ]);
-            }
+                ->firstOrFail();
+            $number = (int) $sequence->next_value;
+            DB::table('finance_sequences')->where('id', $sequence->id)->update([
+                'next_value' => $number + 1,
+                'updated_at' => now(),
+            ]);
 
             $invoice->update([
                 'invoice_number' => sprintf('RE-%d-%06d', $year, $number),
