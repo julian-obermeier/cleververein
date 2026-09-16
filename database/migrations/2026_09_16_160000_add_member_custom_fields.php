@@ -24,7 +24,7 @@ return new class extends Migration
                 $table->timestamps();
 
                 $table->unique(['tenant_id', 'entity_type', 'key']);
-                $table->index(['tenant_id', 'entity_type', 'is_active', 'sort_order']);
+                $table->index(['tenant_id', 'entity_type', 'is_active', 'sort_order'], 'custom_fields_tenant_entity_active_sort_idx');
             });
         }
 
