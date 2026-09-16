@@ -25,17 +25,17 @@ class FinanceTaxExportService
 
         $missing = [];
         foreach ($entries as $entry) {
-            if (! filled($entry->account?->datev_account)) {
+            if (filled($entry->account?->datev_account) === false) {
                 $missing['Konto '.$entry->account?->code] = $entry->account?->name ?: 'Unbekanntes Finanzkonto';
             }
-            if (! filled($entry->category?->datev_account)) {
+            if (filled($entry->category?->datev_account) === false) {
                 $missing['Kategorie '.$entry->category?->code] = $entry->category?->name ?: 'Ohne Kategorie';
             }
         }
         if ($missing !== []) {
             $labels = collect($missing)->map(fn (string $name, string $key) => $key.' ('.$name.')')->values()->take(12)->implode(', ');
             throw ValidationException::withMessages([
-                'export' => 'Für den DATEV-nahen Export fehlen Kontenzuordnungen: '.$labels.($missing && count($missing) > 12 ? ' …' : ''),
+                'export' => 'Für den DATEV-nahen Export fehlen Kontenzuordnungen: '.$labels.(count($missing) > 12 ? ' …' : ''),
             ]);
         }
 
