@@ -20,12 +20,15 @@
     </div>
     @php($items = [
         ['Übersicht','dashboard','dashboard','M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm8 0h8V11h-8v9Zm0-16v5h8V4h-8Z'],
-        ['Mitglieder','members.index','members.*','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0H5Zm14-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm1.5 2c2.2 0 4 1.8 4 4v1h-3.2a9 9 0 0 0-2.5-5h1.7Z'],
+        ['Mitglieder','members.index','members.index|members.create|members.show|members.edit|members.settings','M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0H5Zm14-9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm1.5 2c2.2 0 4 1.8 4 4v1h-3.2a9 9 0 0 0-2.5-5h1.7Z'],
+        ['Haushalte','members.households.index','members.households.*','M4 11 12 3 20 11v9a1 1 0 0 1-1 1h-5v-6h-4v6H9a1 1 0 0 1-1-1v-9Zm5-4V4h6v3l-3-2-3 2Z'],
+        ['Ämter & Funktionen','members.functions.index','members.functions.*','M12 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM5 21v-2a7 7 0 0 1 14 0v2H5Zm14-13h2v5h-2V8Zm-2 2h6v2h-6v-2Z'],
         ['Organisation','organization.index','organization.*','M4 3h7v6H4V3Zm9 0h7v6h-7V3ZM4 15h7v6H4v-6Zm9 0h7v6h-7v-6ZM7 9v3h10V9h2v5H5V9h2Z'],
     ])
     <nav class="mt-4 flex-1 px-2">
-        @foreach($items as [$label,$route,$pattern,$path])
-            <a href="{{ route($route) }}" aria-current="{{ request()->routeIs($pattern) ? 'page' : 'false' }}" class="flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium {{ request()->routeIs($pattern) ? 'border-blue-400 bg-blue-600/35 text-white' : 'border-transparent text-slate-300 hover:bg-white/5 hover:text-white' }}">
+        @foreach($items as [$label,$route,$patterns,$path])
+            @php($patternList = explode('|', $patterns))
+            <a href="{{ route($route) }}" aria-current="{{ request()->routeIs(...$patternList) ? 'page' : 'false' }}" class="flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium {{ request()->routeIs(...$patternList) ? 'border-blue-400 bg-blue-600/35 text-white' : 'border-transparent text-slate-300 hover:bg-white/5 hover:text-white' }}">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="{{ $path }}"/></svg>{{ $label }}
             </a>
         @endforeach
