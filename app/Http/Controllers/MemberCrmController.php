@@ -7,8 +7,8 @@ use App\Models\FunctionAssignment;
 use App\Models\Member;
 use App\Models\MemberCommunication;
 use App\Models\MemberDocument;
-use App\Models\MemberTag;
 use App\Models\Membership;
+use App\Models\MemberTag;
 use App\Models\Person;
 use App\Services\Audit\AuditService;
 use App\Services\Authorization\PermissionService;
@@ -29,8 +29,7 @@ class MemberCrmController extends Controller
         private PermissionService $permissions,
         private AuditService $audit,
         private TenantContext $tenant,
-    ) {
-    }
+    ) {}
 
     public function dashboard(Request $request, Member $member): View
     {
@@ -101,6 +100,7 @@ class MemberCrmController extends Controller
 
                 if ($value === null || $value === '') {
                     $member->customFieldValues()->where('custom_field_definition_id', $field->id)->delete();
+
                     continue;
                 }
 
