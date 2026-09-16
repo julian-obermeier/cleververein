@@ -54,11 +54,21 @@ class FinanceService
 
         $rule = ContributionRule::query()->with('rate')->where('is_active', true)->orderBy('priority')->orderBy('id')->get()
             ->first(function (ContributionRule $rule) use ($membership, $age): bool {
-                if (! $rule->rate?->is_active || ($rule->rate->scope ?? 'member') !== 'member') { return false; }
-                if ($rule->member_type_id && $rule->member_type_id !== $membership?->member_type_id) { return false; }
-                if ($rule->organization_unit_id && $rule->organization_unit_id !== $membership?->organization_unit_id) { return false; }
-                if ($rule->min_age !== null && ($age === null || $age < $rule->min_age)) { return false; }
-                if ($rule->max_age !== null && ($age === null || $age > $rule->max_age)) { return false; }
+                if (! $rule->rate?->is_active || ($rule->rate->scope ?? 'member') !== 'member') {
+                    return false;
+                }
+                if ($rule->member_type_id && $rule->member_type_id !== $membership?->member_type_id) {
+                    return false;
+                }
+                if ($rule->organization_unit_id && $rule->organization_unit_id !== $membership?->organization_unit_id) {
+                    return false;
+                }
+                if ($rule->min_age !== null && ($age === null || $age < $rule->min_age)) {
+                    return false;
+                }
+                if ($rule->max_age !== null && ($age === null || $age > $rule->max_age)) {
+                    return false;
+                }
 
                 return true;
             });
@@ -69,14 +79,18 @@ class FinanceService
     public function createContributionDraft(Member $member, int $year, int $userId): ?FinanceInvoice
     {
         $resolved = $this->resolveContribution($member, CarbonImmutable::create($year, 1, 1));
-        if (! $resolved || $resolved['exempt']) { return null; }
+        if (! $resolved || $resolved['exempt']) {
+            return null;
+        }
 
         /** @var ContributionRate $rate */
         $rate = $resolved['rate'];
         $existing = FinanceInvoice::query()->where('member_id', $member->id)->whereYear('invoice_date', $year)
             ->whereHas('items', fn ($query) => $query->where('contribution_rate_id', $rate->id))
             ->whereNotIn('status', ['cancelled'])->first();
-        if ($existing) { return $existing; }
+        if ($existing) {
+            return $existing;
+        }
 
         [$multiplier, $unitAmount, $gross, $description] = $this->contributionAmounts($rate, (float) $resolved['amount'], $year);
 
@@ -111,7 +125,9 @@ class FinanceService
         $existing = FinanceInvoice::query()->where('household_id', $household->id)->whereYear('invoice_date', $year)
             ->whereHas('items', fn ($query) => $query->where('contribution_rate_id', $rate->id))
             ->whereNotIn('status', ['cancelled'])->first();
-        if ($existing) { return $existing; }
+        if ($existing) {
+            return $existing;
+        }
 
         [$multiplier, $unitAmount, $gross, $description] = $this->contributionAmounts($rate, (float) $rate->amount, $year);
         $description = $rate->name.' · '.$household->name.' · Beitragsjahr '.$year.($multiplier > 1 ? ' · '.$multiplier.' × '.number_format($unitAmount, 2, ',', '.').' €' : '');
@@ -199,9 +215,13 @@ class FinanceService
         $status = $invoice->status;
 
         if (! in_array($status, ['draft', 'cancelled'], true)) {
-            if (($paid + $credited) >= $gross && $gross > 0) { $status = 'paid'; }
-            elseif ($invoice->due_date?->isPast() && ($paid + $credited) < $gross) { $status = 'overdue'; }
-            else { $status = 'open'; }
+            if (($paid + $credited) >= $gross && $gross > 0) {
+                $status = 'paid';
+            } elseif ($invoice->due_date?->isPast() && ($paid + $credited) < $gross) {
+                $status = 'overdue';
+            } else {
+                $status = 'open';
+            }
         }
         $invoice->update(['net_amount' => $net, 'tax_amount' => $tax, 'gross_amount' => $gross, 'paid_amount' => $paid, 'status' => $status]);
 
@@ -232,10 +252,14 @@ class FinanceService
 
     private function contributionAmounts(ContributionRate $rate, float $unitAmount, int $year): array
     {
-        $multiplier = match ($rate->interval) { 'monthly' => 12, 'quarterly' => 4, 'half_yearly' => 2, default => 1 };
+        $multiplier = match ($rate->interval) {
+            'monthly' => 12, 'quarterly' => 4, 'half_yearly' => 2, default => 1
+        };
         $gross = round($unitAmount * $multiplier, 2);
         $description = $rate->name.' · Beitragsjahr '.$year;
-        if ($multiplier > 1) { $description .= ' · '.$multiplier.' × '.number_format($unitAmount, 2, ',', '.').' €'; }
+        if ($multiplier > 1) {
+            $description .= ' · '.$multiplier.' × '.number_format($unitAmount, 2, ',', '.').' €';
+        }
 
         return [$multiplier, $unitAmount, $gross, $description];
     }

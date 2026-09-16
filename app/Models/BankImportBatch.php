@@ -15,6 +15,13 @@ class BankImportBatch extends Model
         'public_id', 'original_name', 'file_hash', 'row_count', 'matched_count', 'imported_by',
     ];
 
-    public function transactions(): HasMany { return $this->hasMany(BankTransaction::class); }
-    public function importer(): BelongsTo { return $this->belongsTo(User::class, 'imported_by'); }
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(BankTransaction::class);
+    }
+
+    public function importer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'imported_by');
+    }
 }

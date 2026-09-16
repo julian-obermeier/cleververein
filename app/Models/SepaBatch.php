@@ -21,6 +21,13 @@ class SepaBatch extends Model
         'generated_at' => 'datetime',
     ];
 
-    public function items(): HasMany { return $this->hasMany(SepaBatchItem::class); }
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
+    public function items(): HasMany
+    {
+        return $this->hasMany(SepaBatchItem::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }

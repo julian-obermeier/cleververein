@@ -22,8 +22,23 @@ class BankTransaction extends Model
         'match_confidence' => 'integer',
     ];
 
-    public function batch(): BelongsTo { return $this->belongsTo(BankImportBatch::class, 'bank_import_batch_id'); }
-    public function invoice(): BelongsTo { return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id'); }
-    public function member(): BelongsTo { return $this->belongsTo(Member::class); }
-    public function payment(): BelongsTo { return $this->belongsTo(FinancePayment::class, 'finance_payment_id'); }
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(BankImportBatch::class, 'bank_import_batch_id');
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id');
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public function payment(): BelongsTo
+    {
+        return $this->belongsTo(FinancePayment::class, 'finance_payment_id');
+    }
 }

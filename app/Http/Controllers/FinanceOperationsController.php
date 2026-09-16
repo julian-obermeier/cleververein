@@ -21,7 +21,6 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -148,7 +147,9 @@ class FinanceOperationsController extends Controller
                 $before = FinanceInvoice::query()->where('household_id', $household->id)->whereYear('invoice_date', $data['year'])
                     ->whereHas('items', fn ($query) => $query->where('contribution_rate_id', $rate->id))->exists();
                 $this->finance->createHouseholdContributionDraft($household, $rate, (int) $data['year'], $request->user()->id);
-                if (! $before) { $created++; }
+                if (! $before) {
+                    $created++;
+                }
             }
         });
         $this->audit->record('finance.household_contribution_run', null, new: ['year' => (int) $data['year'], 'rate_id' => $rate->id, 'checked' => $checked, 'created' => $created]);
@@ -173,7 +174,9 @@ class FinanceOperationsController extends Controller
         if (! $batch->file_path || ! Storage::disk($batch->file_disk ?: 'local')->exists($batch->file_path)) {
             $batch = $this->sepa->generate($batch);
         }
-        if ($batch->status === 'generated') { $batch->update(['status' => 'exported']); }
+        if ($batch->status === 'generated') {
+            $batch->update(['status' => 'exported']);
+        }
         $this->audit->record('finance.sepa_batch_downloaded', $batch);
 
         return Storage::disk($batch->file_disk)->download($batch->file_path, $batch->batch_reference.'.xml', ['Content-Type' => 'application/xml']);

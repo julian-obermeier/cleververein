@@ -23,7 +23,18 @@ class FinanceCreditNote extends Model
         'pdf_generated_at' => 'datetime',
     ];
 
-    public function invoice(): BelongsTo { return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id'); }
-    public function member(): BelongsTo { return $this->belongsTo(Member::class); }
-    public function household(): BelongsTo { return $this->belongsTo(Household::class); }
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id');
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public function household(): BelongsTo
+    {
+        return $this->belongsTo(Household::class);
+    }
 }

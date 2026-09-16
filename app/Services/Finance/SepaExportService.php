@@ -138,8 +138,10 @@ class SepaExportService
             $this->node($dom, $pmt, 'NbOfTxs', (string) $items->count());
             $this->node($dom, $pmt, 'CtrlSum', number_format((float) $items->sum('amount'), 2, '.', ''));
             $type = $pmt->appendChild($dom->createElement('PmtTpInf'));
-            $svc = $type->appendChild($dom->createElement('SvcLvl')); $this->node($dom, $svc, 'Cd', 'SEPA');
-            $local = $type->appendChild($dom->createElement('LclInstrm')); $this->node($dom, $local, 'Cd', 'CORE');
+            $svc = $type->appendChild($dom->createElement('SvcLvl'));
+            $this->node($dom, $svc, 'Cd', 'SEPA');
+            $local = $type->appendChild($dom->createElement('LclInstrm'));
+            $this->node($dom, $local, 'Cd', 'CORE');
             $this->node($dom, $type, 'SeqTp', $sequence);
             $this->node($dom, $pmt, 'ReqdColltnDt', $batch->collection_date->format('Y-m-d'));
 
@@ -153,7 +155,8 @@ class SepaExportService
             $this->node($dom, $pmt, 'ChrgBr', 'SLEV');
             $scheme = $pmt->appendChild($dom->createElement('CdtrSchmeId'))->appendChild($dom->createElement('Id'))->appendChild($dom->createElement('PrvtId'))->appendChild($dom->createElement('Othr'));
             $this->node($dom, $scheme, 'Id', $settings->creditor_id);
-            $schemeName = $scheme->appendChild($dom->createElement('SchmeNm')); $this->node($dom, $schemeName, 'Prtry', 'SEPA');
+            $schemeName = $scheme->appendChild($dom->createElement('SchmeNm'));
+            $this->node($dom, $schemeName, 'Prtry', 'SEPA');
 
             foreach ($items as $item) {
                 $mandate = $item->mandate;
@@ -162,7 +165,8 @@ class SepaExportService
                 $paymentId = $transaction->appendChild($dom->createElement('PmtId'));
                 $this->node($dom, $paymentId, 'EndToEndId', $item->end_to_end_id);
                 $amount = $dom->createElement('InstdAmt', number_format((float) $item->amount, 2, '.', ''));
-                $amount->setAttribute('Ccy', 'EUR'); $transaction->appendChild($amount);
+                $amount->setAttribute('Ccy', 'EUR');
+                $transaction->appendChild($amount);
                 $mandateInfo = $transaction->appendChild($dom->createElement('DrctDbtTx'))->appendChild($dom->createElement('MndtRltdInf'));
                 $this->node($dom, $mandateInfo, 'MndtId', $mandate->mandate_reference);
                 $this->node($dom, $mandateInfo, 'DtOfSgntr', $mandate->signed_at->format('Y-m-d'));
@@ -188,16 +192,25 @@ class SepaExportService
             return;
         }
         $address = $party->appendChild($dom->createElement('PstlAdr'));
-        if ($street) { $this->node($dom, $address, 'StrtNm', $street); }
-        if ($postal) { $this->node($dom, $address, 'PstCd', $postal); }
-        if ($city) { $this->node($dom, $address, 'TwnNm', $city); }
-        if ($country) { $this->node($dom, $address, 'Ctry', strtoupper(substr($country, 0, 2))); }
+        if ($street) {
+            $this->node($dom, $address, 'StrtNm', $street);
+        }
+        if ($postal) {
+            $this->node($dom, $address, 'PstCd', $postal);
+        }
+        if ($city) {
+            $this->node($dom, $address, 'TwnNm', $city);
+        }
+        if ($country) {
+            $this->node($dom, $address, 'Ctry', strtoupper(substr($country, 0, 2)));
+        }
     }
 
     private function agent(DOMDocument $dom, \DOMElement $institution, ?string $bic): void
     {
         if ($bic) {
             $this->node($dom, $institution, 'BICFI', strtoupper(preg_replace('/\s+/', '', $bic)));
+
             return;
         }
         $other = $institution->appendChild($dom->createElement('Othr'));

@@ -21,6 +21,13 @@ class FinanceDunning extends Model
         'pdf_generated_at' => 'datetime',
     ];
 
-    public function invoice(): BelongsTo { return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id'); }
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }

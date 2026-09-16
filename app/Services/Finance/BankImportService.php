@@ -132,13 +132,20 @@ class BankImportService
         $firstLine = strtok($contents, "\r\n") ?: '';
         $delimiter = substr_count($firstLine, ';') >= substr_count($firstLine, ',') ? ';' : ',';
         $handle = fopen('php://temp', 'r+');
-        fwrite($handle, $contents); rewind($handle);
+        fwrite($handle, $contents);
+        rewind($handle);
         $headers = fgetcsv($handle, 0, $delimiter);
-        if (! $headers) { fclose($handle); return []; }
+        if (! $headers) {
+            fclose($handle);
+
+            return [];
+        }
         $headers = array_map(fn ($header) => mb_strtolower(trim((string) $header)), $headers);
         $rows = [];
         while (($values = fgetcsv($handle, 0, $delimiter)) !== false) {
-            if (count(array_filter($values, fn ($value) => trim((string) $value) !== '')) === 0) { continue; }
+            if (count(array_filter($values, fn ($value) => trim((string) $value) !== '')) === 0) {
+                continue;
+            }
             $values = array_pad($values, count($headers), null);
             $rows[] = array_combine($headers, array_slice($values, 0, count($headers)));
         }
@@ -175,7 +182,9 @@ class BankImportService
     private function value(array $row, array $keys): mixed
     {
         foreach ($keys as $key) {
-            if (array_key_exists($key, $row)) { return $row[$key]; }
+            if (array_key_exists($key, $row)) {
+                return $row[$key];
+            }
         }
 
         return null;
@@ -184,7 +193,10 @@ class BankImportService
     private function date(string $value): ?string
     {
         foreach (['d.m.Y', 'Y-m-d', 'd.m.y'] as $format) {
-            try { return CarbonImmutable::createFromFormat($format, trim($value))->format('Y-m-d'); } catch (\Throwable) {}
+            try {
+                return CarbonImmutable::createFromFormat($format, trim($value))->format('Y-m-d');
+            } catch (\Throwable) {
+            }
         }
 
         return null;

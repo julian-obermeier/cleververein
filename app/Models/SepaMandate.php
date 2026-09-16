@@ -23,7 +23,10 @@ class SepaMandate extends Model
         'last_collected_at' => 'date',
     ];
 
-    public function member(): BelongsTo { return $this->belongsTo(Member::class); }
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
 
     public function getMaskedIbanAttribute(): string
     {

@@ -29,14 +29,45 @@ class FinanceInvoice extends Model
         'cancelled_at' => 'datetime',
     ];
 
-    public function member(): BelongsTo { return $this->belongsTo(Member::class); }
-    public function household(): BelongsTo { return $this->belongsTo(Household::class); }
-    public function items(): HasMany { return $this->hasMany(FinanceInvoiceItem::class); }
-    public function payments(): HasMany { return $this->hasMany(FinancePayment::class); }
-    public function dunnings(): HasMany { return $this->hasMany(FinanceDunning::class); }
-    public function creditNotes(): HasMany { return $this->hasMany(FinanceCreditNote::class); }
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
-    public function issuer(): BelongsTo { return $this->belongsTo(User::class, 'issued_by'); }
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
+
+    public function household(): BelongsTo
+    {
+        return $this->belongsTo(Household::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(FinanceInvoiceItem::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(FinancePayment::class);
+    }
+
+    public function dunnings(): HasMany
+    {
+        return $this->hasMany(FinanceDunning::class);
+    }
+
+    public function creditNotes(): HasMany
+    {
+        return $this->hasMany(FinanceCreditNote::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function issuer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'issued_by');
+    }
 
     public function getCreditedAmountAttribute(): float
     {

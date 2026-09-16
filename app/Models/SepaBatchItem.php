@@ -16,7 +16,18 @@ class SepaBatchItem extends Model
 
     protected $casts = ['amount' => 'decimal:2'];
 
-    public function batch(): BelongsTo { return $this->belongsTo(SepaBatch::class, 'sepa_batch_id'); }
-    public function invoice(): BelongsTo { return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id'); }
-    public function mandate(): BelongsTo { return $this->belongsTo(SepaMandate::class, 'sepa_mandate_id'); }
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(SepaBatch::class, 'sepa_batch_id');
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(FinanceInvoice::class, 'finance_invoice_id');
+    }
+
+    public function mandate(): BelongsTo
+    {
+        return $this->belongsTo(SepaMandate::class, 'sepa_mandate_id');
+    }
 }
