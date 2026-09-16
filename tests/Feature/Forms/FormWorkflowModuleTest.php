@@ -66,6 +66,36 @@ class FormWorkflowModuleTest extends TestCase
         $this->assertDatabaseMissing('form_answers', ['form_submission_id' => $submission->id, 'field_key' => 'details']);
     }
 
+    public function test_public_form_link_renders_as_guest(): void
+    {
+        [, $user] = $this->tenantUser('formular-public-render');
+        $form = $this->form($user, 'public');
+        $form->update([
+            'status' => 'published',
+            'public_token' => Str::random(48),
+            'allow_anonymous' => false,
+            'published_at' => now(),
+        ]);
+        $this->field($form, 'kontaktart', 'Kontaktart', 'select', true, ['E-Mail', 'Telefon']);
+        $this->field($form, 'nachricht', 'Nachricht', 'textarea', true, null, [
+            'field_key' => 'kontaktart',
+            'operator' => 'equals',
+            'value' => 'E-Mail',
+        ]);
+        $this->field($form, 'anlage', 'Anlage', 'file', false);
+
+        app(TenantContext::class)->clear();
+
+        $this->get(route('forms.public.show', $form->public_token))
+            ->assertOk()
+            ->assertSeeText('Online-Formular')
+            ->assertSeeText('Kontaktart')
+            ->assertSeeText('Nachricht')
+            ->assertSeeText('Anlage');
+
+        $this->assertFalse(app(TenantContext::class)->hasTenant());
+    }
+
     public function test_public_form_resolves_its_own_tenant_and_accepts_submission(): void
     {
         [$tenantA, $userA] = $this->tenantUser('formular-a');
