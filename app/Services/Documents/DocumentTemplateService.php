@@ -121,6 +121,7 @@ class DocumentTemplateService
             $h = $block['h'];
             if ($block['type'] === 'line') {
                 $blocks .= '<div style="position:absolute;left:'.$x.'mm;top:'.$y.'mm;width:'.$w.'mm;border-top:1px solid '.e($block['color']).';"></div>';
+
                 continue;
             }
 
