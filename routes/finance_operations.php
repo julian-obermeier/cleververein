@@ -20,6 +20,11 @@ Route::middleware(['installed', 'auth', 'verified', 'tenant'])->group(function (
     Route::post('/finanzen/kategorien', [FinanceLedgerController::class, 'storeCategory'])->name('finance.ledger.categories.store');
     Route::patch('/finanzen/kategorien/{category}/status', [FinanceLedgerController::class, 'toggleCategory'])->name('finance.ledger.categories.toggle');
 
+    Route::get('/finanzen/bankabgleich', [FinanceBankImportController::class, 'index'])->name('finance.bank.index');
+    Route::post('/finanzen/bankimport', [FinanceBankImportController::class, 'store'])->name('finance.bank.import');
+    Route::post('/finanzen/bankumsatz/{transaction}/zuordnen', [FinanceOperationsController::class, 'assignBank'])->name('finance.bank.assign');
+    Route::patch('/finanzen/bankumsatz/{transaction}/ignorieren', [FinanceOperationsController::class, 'ignoreBank'])->name('finance.bank.ignore');
+
     Route::get('/finanzen/steuerberater', [FinanceTaxExportController::class, 'index'])->name('finance.tax-export.index');
     Route::put('/finanzen/steuerberater/mapping', [FinanceTaxExportController::class, 'saveMapping'])->name('finance.tax-export.mapping');
     Route::get('/finanzen/steuerberater/export.csv', [FinanceTaxExportController::class, 'export'])->name('finance.tax-export.csv');
@@ -35,8 +40,4 @@ Route::middleware(['installed', 'auth', 'verified', 'tenant'])->group(function (
     Route::post('/finanzen/sepa-laeufe', [FinanceOperationsController::class, 'createSepa'])->name('finance.sepa.batches.store');
     Route::get('/finanzen/sepa-laeufe/{batch}/download', [FinanceOperationsController::class, 'downloadSepa'])->name('finance.sepa.batches.download');
     Route::patch('/finanzen/sepa-laeufe/{batch}/eingereicht', [FinanceOperationsController::class, 'submitSepa'])->name('finance.sepa.batches.submit');
-
-    Route::post('/finanzen/bankimport', [FinanceBankImportController::class, 'store'])->name('finance.bank.import');
-    Route::post('/finanzen/bankumsatz/{transaction}/zuordnen', [FinanceOperationsController::class, 'assignBank'])->name('finance.bank.assign');
-    Route::patch('/finanzen/bankumsatz/{transaction}/ignorieren', [FinanceOperationsController::class, 'ignoreBank'])->name('finance.bank.ignore');
 });
