@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CustomFieldDefinition;
 use App\Models\Member;
 use App\Models\MemberCommunication;
 use App\Models\MemberDocument;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,6 +28,91 @@ class MemberCrmController extends Controller
         private AuditService $audit,
         private TenantContext $tenant,
     ) {}
+
+    public function dashboard(Request $request, Member $member): View
+    {
+        $this->authorizeMemberPermission($request, 'members.view', $member);
+        $member->load([
+            'person',
+            'memberships.organizationUnit',
+            'tags',
+            'documents.uploader',
+            'communications.user',
+            'customFieldValues.definition',
+        ]);
+
+        return view('members.crm', [
+            'member' => $member,
+            'tags' => MemberTag::query()->where('is_active', true)->orderBy('name')->get(),
+            'customFields' => CustomFieldDefinition::query()
+                ->where('entity_type', 'member')
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(),
+            'customValues' => $member->customFieldValues->keyBy('custom_field_definition_id'),
+            'canTags' => $this->allowsMemberPermission($request, 'members.tags', $member),
+            'canDocuments' => $this->allowsMemberPermission($request, 'members.documents', $member),
+            'canCommunications' => $this->allowsMemberPermission($request, 'members.communications', $member),
+            'canUpdate' => $this->allowsMemberPermission($request, 'members.update', $member),
+            'canHistory' => $this->allowsMemberPermission($request, 'members.history', $member),
+        ]);
+    }
+
+    public function saveCustomFields(Request $request, Member $member): RedirectResponse
+    {
+        $this->authorizeMemberPermission($request, 'members.update', $member);
+        $fields = CustomFieldDefinition::query()
+            ->where('entity_type', 'member')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        $rules = ['custom_fields' => ['nullable', 'array']];
+        foreach ($fields as $field) {
+            $fieldRules = $field->is_required ? ['required'] : ['nullable'];
+            $fieldRules[] = match ($field->field_type) {
+                'number' => 'numeric',
+                'date' => 'date',
+                'checkbox' => $field->is_required ? 'accepted' : 'boolean',
+                'select' => Rule::in($field->options ?? []),
+                default => 'string',
+            };
+            if (in_array($field->field_type, ['text', 'textarea', 'select'], true)) {
+                $fieldRules[] = 'max:10000';
+            }
+            $rules['custom_fields.'.$field->id] = $fieldRules;
+        }
+        $validated = $request->validate($rules);
+        $values = $validated['custom_fields'] ?? [];
+        $oldValues = $member->customFieldValues()->pluck('value', 'custom_field_definition_id')->all();
+
+        DB::transaction(function () use ($member, $fields, $values): void {
+            foreach ($fields as $field) {
+                $value = $values[$field->id] ?? null;
+                if ($field->field_type === 'checkbox') {
+                    $value = (string) ((bool) $value ? 1 : 0);
+                } elseif (is_string($value)) {
+                    $value = trim($value);
+                }
+
+                if ($value === null || $value === '') {
+                    $member->customFieldValues()->where('custom_field_definition_id', $field->id)->delete();
+                    continue;
+                }
+
+                $member->customFieldValues()->updateOrCreate(
+                    ['custom_field_definition_id' => $field->id],
+                    ['entity_type' => 'member', 'value' => (string) $value],
+                );
+            }
+        });
+
+        $newValues = $member->customFieldValues()->pluck('value', 'custom_field_definition_id')->all();
+        $this->audit->record('member.custom_fields_updated', $member, old: $oldValues, new: $newValues);
+
+        return back()->with('success', 'Zusatzfelder wurden gespeichert.');
+    }
 
     public function storeTag(Request $request): RedirectResponse
     {
@@ -216,13 +303,18 @@ class MemberCrmController extends Controller
         abort_unless($this->permissions->allows($request->user(), $permission), 403, 'Für diese Aktion fehlt die Berechtigung.');
     }
 
-    private function authorizeMemberPermission(Request $request, string $permission, Member $member): void
+    private function allowsMemberPermission(Request $request, string $permission, Member $member): bool
     {
         $member->loadMissing('memberships');
         if ($request->user()->is_super_admin || $this->permissions->allows($request->user(), $permission)) {
-            return;
+            return true;
         }
-        $allowed = $member->memberships->contains(fn (Membership $membership) => $membership->organization_unit_id && $this->permissions->allows($request->user(), $permission, $membership->organization_unit_id));
-        abort_unless($allowed, 403, 'Für dieses Mitglied fehlt die Berechtigung.');
+
+        return $member->memberships->contains(fn (Membership $membership) => $membership->organization_unit_id && $this->permissions->allows($request->user(), $permission, $membership->organization_unit_id));
+    }
+
+    private function authorizeMemberPermission(Request $request, string $permission, Member $member): void
+    {
+        abort_unless($this->allowsMemberPermission($request, $permission, $member), 403, 'Für dieses Mitglied fehlt die Berechtigung.');
     }
 }
