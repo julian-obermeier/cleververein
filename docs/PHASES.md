@@ -8,7 +8,7 @@
 | 4 Veranstaltungen und Kommunikation | Teilweise vorbereitet | Kommunikationshistorie je Mitglied vorhanden; Veranstaltungen und zentrale Kommunikation noch offen |
 | 5 Dokumentengenerator | Erster produktiver Funktionsblock | Mandantenfähige Vorlagen, visueller Editor, Platzhalter, PDF-Vorschau, private Ablage, Historie, Rechte und Featuretests vorhanden |
 | 6 Formulare und Workflows | Offen | – |
-| 7 Beiträge und Verwaltung | In Umsetzung, zweiter produktiver Funktionsblock | Beiträge, Rechnungen, Gutschriften/Storno, Finanz-PDFs, SEPA-Läufe, Bankabgleich, Haushaltsbeiträge und Mahnwesen vorhanden |
+| 7 Beiträge und Verwaltung | In Umsetzung, dritter produktiver Funktionsblock | Beiträge, Rechnungen, Gutschriften/Storno, Finanz-PDFs, SEPA-Läufe, Bankabgleich, Haushaltsbeiträge, Mahnwesen, Finanzjournal, Konten/Kategorien und Berichte vorhanden |
 | 8 SaaS-Ausbau | Offen | Tenant-Kern vorhanden, Tarif-/Aboverwaltung der SaaS-Plattform noch offen |
 | 9 Stabilisierung | Laufend | CI prüft Vite-Build, Pint und PHPUnit; vollständige Release-/Updateabnahme noch offen |
 
@@ -90,14 +90,27 @@ Bereits umgesetzt:
 - Mahnstufen und Mahngebühren als separate Historie
 - private Mahnungs-PDFs
 - Finanz-Cockpit plus separater Bereich „Finanzoperationen“ für sensible Stammdaten, SEPA und Bankabgleich
-- eigene Finance-Permissions, Tenant-Isolation und Audit-Logging
-- Featuretests für Rechnungsnummern, PDF-Erzeugung, Gutschriften, Haushaltsbeiträge, SEPA-XML, Bankabgleich und Verschlüsselung
+- Finanzkonten für Bank, Kasse, Verrechnung und frei definierbare weitere Konten
+- frei definierbare Einnahmen- und Ausgabenkategorien mit optionalem Standard-Steuersatz
+- unveränderliches Finanzjournal mit fortlaufender BU-Jahressequenz
+- manuelle Einnahmen-/Ausgabenbuchungen mit Netto-, Steuer- und Bruttobeträgen
+- Korrektur manueller Buchungen ausschließlich über nachvollziehbare Gegenbuchungen statt Löschung
+- automatische Journalbuchung neuer Rechnungzahlungen mit Dublettenschutz je Zahlung
+- bestehende Rechnungzahlungen werden beim Update einmalig in das Journal übernommen
+- automatische Zuordnung von Bankimport-Zahlungen zum Journal
+- Kontostände inklusive Eröffnungsbestand
+- Jahres-, Monats- und Kategorieauswertungen
+- filterbarer CSV-Journalexport
+- eigene Rechte für Finanzbuchungen und Finanzberichte
+- Fresh-Install- und neue-Tenant-taugliche Initialisierung der Standardkonten/-kategorien
+- Tenant-Isolation, Audit-Logging und Featuretests für das Journal
 
 Nächste Ausbaustufen:
 
 - Rücklastschriften und Erstattungs-/Guthabenworkflow
 - CAMT-Import zusätzlich zum generischen Bank-CSV
 - Bank-spezifische SEPA-Validierung/XSD-Prüfung vor Export
-- Buchungskonten/Kategorien und Kassenbuch
 - Spenden/Zuwendungsbescheinigungen
-- umfangreichere Finanzberichte und Jahresauswertungen
+- Beleguploads direkt an Finanzbuchungen
+- Kassenabschluss/Kassenprüfung und periodische Sperren
+- weitergehende Jahresberichte und Exporte für Steuerberatung/DATEV-nahe Weiterverarbeitung
