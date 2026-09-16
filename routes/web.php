@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FunctionDirectoryController;
+use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\MemberSpreadsheetController;
 use App\Http\Controllers\MemberToolsController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PasswordController;
@@ -42,8 +45,21 @@ Route::middleware('installed')->group(function (): void {
         Route::patch('/mitglieder/einstellungen/mitgliedsarten/{memberType}', [MemberToolsController::class, 'toggleMemberType'])->name('members.types.toggle');
         Route::post('/mitglieder/einstellungen/funktionen', [MemberToolsController::class, 'storeFunctionDefinition'])->name('members.functions.definitions.store');
         Route::patch('/mitglieder/einstellungen/funktionen/{function}', [MemberToolsController::class, 'toggleFunctionDefinition'])->name('members.functions.definitions.toggle');
+
+        Route::get('/mitglieder/funktionen', [FunctionDirectoryController::class, 'index'])->name('members.functions.index');
+        Route::get('/mitglieder/haushalte', [HouseholdController::class, 'index'])->name('members.households.index');
+        Route::post('/mitglieder/haushalte', [HouseholdController::class, 'store'])->name('members.households.central.store');
+        Route::put('/mitglieder/haushalte/{household}', [HouseholdController::class, 'update'])->name('members.households.update');
+        Route::post('/mitglieder/haushalte/{household}/mitglieder', [HouseholdController::class, 'attachMember'])->name('members.households.members.store');
+        Route::delete('/mitglieder/haushalte/{household}/mitglieder/{member}', [HouseholdController::class, 'detachMember'])->name('members.households.members.destroy');
+        Route::delete('/mitglieder/haushalte/{household}', [HouseholdController::class, 'destroy'])->name('members.households.archive');
+
         Route::get('/mitglieder-export.csv', [MemberToolsController::class, 'export'])->name('members.export');
         Route::post('/mitglieder-import', [MemberToolsController::class, 'import'])->name('members.import');
+        Route::get('/mitglieder-export.xlsx', [MemberSpreadsheetController::class, 'export'])->name('members.export.xlsx');
+        Route::get('/mitglieder-importvorlage.xlsx', [MemberSpreadsheetController::class, 'template'])->name('members.import.template.xlsx');
+        Route::post('/mitglieder-import.xlsx', [MemberSpreadsheetController::class, 'import'])->name('members.import.xlsx');
+
         Route::get('/mitglieder/{member}', [MemberController::class, 'show'])->name('members.show');
         Route::get('/mitglieder/{member}/bearbeiten', [MemberController::class, 'edit'])->name('members.edit');
         Route::put('/mitglieder/{member}', [MemberController::class, 'update'])->name('members.update');
