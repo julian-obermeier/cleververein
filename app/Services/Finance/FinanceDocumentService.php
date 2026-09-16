@@ -4,6 +4,7 @@ namespace App\Services\Finance;
 
 use App\Models\FinanceCreditNote;
 use App\Models\FinanceDonationCertificate;
+use App\Models\FinanceDonationCollectiveCertificate;
 use App\Models\FinanceDunning;
 use App\Models\FinanceInvoice;
 use App\Models\FinanceSetting;
@@ -95,6 +96,27 @@ class FinanceDocumentService
         ]);
 
         return $certificate->fresh();
+    }
+
+    public function collectiveDonationCertificate(FinanceDonationCollectiveCertificate $certificate): FinanceDonationCollectiveCertificate
+    {
+        abort_unless(in_array($certificate->status, ['issued', 'voided'], true), 422, 'Die Sammelbestätigung ist nicht ausgabefähig.');
+        $certificate->loadMissing('items.donation');
+
+        $pdf = $this->render('finance.pdf.donation-collective-certificate', [
+            'certificate' => $certificate,
+            'amountWords' => $this->amountInWords((float) $certificate->total_amount),
+        ]);
+        $path = 'finance-documents/'.$this->tenant->id().'/donation-collective-certificates/'.$certificate->public_id.'.pdf';
+        Storage::disk('local')->put($path, $pdf);
+        $certificate->update([
+            'pdf_disk' => 'local',
+            'pdf_path' => $path,
+            'pdf_size' => strlen($pdf),
+            'pdf_generated_at' => now(),
+        ]);
+
+        return $certificate->fresh('items.donation');
     }
 
     private function render(string $view, array $data): string
