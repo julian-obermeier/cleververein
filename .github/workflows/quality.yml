@@ -26,6 +26,8 @@ jobs:
       - run: git diff --binary > pint.patch
       - uses: actions/upload-artifact@v4
         with:
-          name: pint-format-patch
-          path: pint.patch
+          name: build-reproducibility
+          path: |
+            pint.patch
+            composer.lock
       - run: php artisan test
