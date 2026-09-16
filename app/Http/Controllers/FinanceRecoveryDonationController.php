@@ -6,6 +6,7 @@ use App\Models\BankTransaction;
 use App\Models\FinanceAccount;
 use App\Models\FinanceDonation;
 use App\Models\FinanceDonationCertificate;
+use App\Models\FinanceDonationCollectiveCertificate;
 use App\Models\FinancePayment;
 use App\Models\FinancePaymentAdjustment;
 use App\Models\FinanceSetting;
@@ -35,7 +36,7 @@ class FinanceRecoveryDonationController extends Controller
         $year = (int) ($request->integer('year') ?: now()->year);
 
         $donationQuery = FinanceDonation::query()
-            ->with(['member.person', 'account', 'entry', 'certificates'])
+            ->with(['member.person', 'account', 'entry', 'certificates', 'collectiveItems.certificate'])
             ->whereYear('donation_date', $year)
             ->orderByDesc('donation_date')
             ->orderByDesc('id');
@@ -62,13 +63,18 @@ class FinanceRecoveryDonationController extends Controller
                 ->with(['payment', 'invoice.member.person', 'reversalEntry', 'feeEntry', 'creator'])
                 ->latest('adjustment_date')->latest('id')->limit(60)->get(),
             'donations' => $donationQuery->paginate(30)->withQueryString(),
+            'collectiveCertificates' => FinanceDonationCollectiveCertificate::query()
+                ->with('items.donation')
+                ->whereYear('issue_date', $year)
+                ->latest('issue_date')->latest('id')->limit(50)->get(),
             'accounts' => FinanceAccount::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
             'members' => Member::query()->with('person')->where('status', 'active')->orderBy('member_number')->limit(500)->get(),
             'metrics' => [
                 'donations' => $yearDonations->where('status', 'received')->count(),
                 'amount' => round((float) $yearDonations->where('status', 'received')->sum('amount'), 2),
                 'expense_waivers' => $yearDonations->where('status', 'received')->where('expense_waiver', true)->count(),
-                'certificates' => FinanceDonationCertificate::query()->whereYear('issue_date', $year)->where('status', 'issued')->count(),
+                'certificates' => FinanceDonationCertificate::query()->whereYear('issue_date', $year)->where('status', 'issued')->count()
+                    + FinanceDonationCollectiveCertificate::query()->whereYear('issue_date', $year)->where('status', 'issued')->count(),
                 'adjustments' => FinancePaymentAdjustment::query()->whereYear('adjustment_date', $year)->where('status', 'posted')->count(),
             ],
             'canAdjust' => $this->allows($request, 'finance.adjustments'),
@@ -151,6 +157,26 @@ class FinanceRecoveryDonationController extends Controller
         return back()->with('success', 'Zuwendungsbestätigung '.$certificate->certificate_number.' wurde ausgestellt.');
     }
 
+    public function issueCollectiveCertificate(Request $request): RedirectResponse
+    {
+        $this->authorizePermission($request, 'finance.donation_certificates');
+        $data = $request->validate([
+            'donations' => ['required', 'array', 'min:2', 'max:250'],
+            'donations.*' => ['required', 'integer', 'distinct'],
+        ]);
+        $certificate = $this->recovery->issueCollectiveCertificate($data['donations'], $request->user()->id);
+        $certificate = $this->documents->collectiveDonationCertificate($certificate);
+        $this->audit->record('finance.donation_collective_certificate_issued', $certificate, new: [
+            'certificate_number' => $certificate->certificate_number,
+            'total_amount' => $certificate->total_amount,
+            'items' => $certificate->items->count(),
+            'period_from' => $certificate->period_from?->toDateString(),
+            'period_to' => $certificate->period_to?->toDateString(),
+        ]);
+
+        return back()->with('success', 'Sammelbestätigung '.$certificate->certificate_number.' wurde ausgestellt.');
+    }
+
     public function certificatePdf(Request $request, FinanceDonationCertificate $certificate): StreamedResponse
     {
         $this->authorizePermission($request, 'finance.donation_certificates');
@@ -166,6 +192,21 @@ class FinanceRecoveryDonationController extends Controller
         );
     }
 
+    public function collectiveCertificatePdf(Request $request, FinanceDonationCollectiveCertificate $collectiveCertificate): StreamedResponse
+    {
+        $this->authorizePermission($request, 'finance.donation_certificates');
+        if ($collectiveCertificate->status === 'voided' || ! $collectiveCertificate->pdf_path || ! Storage::disk($collectiveCertificate->pdf_disk ?: 'local')->exists($collectiveCertificate->pdf_path)) {
+            $collectiveCertificate = $this->documents->collectiveDonationCertificate($collectiveCertificate);
+        }
+        $this->audit->record('finance.donation_collective_certificate_downloaded', $collectiveCertificate);
+
+        return Storage::disk($collectiveCertificate->pdf_disk ?: 'local')->download(
+            $collectiveCertificate->pdf_path,
+            $collectiveCertificate->certificate_number.'-Sammelbestaetigung'.($collectiveCertificate->status === 'voided' ? '-STORNIERT' : '').'.pdf',
+            ['Content-Type' => 'application/pdf'],
+        );
+    }
+
     public function voidCertificate(Request $request, FinanceDonationCertificate $certificate): RedirectResponse
     {
         $this->authorizePermission($request, 'finance.donation_certificates');
@@ -175,6 +216,17 @@ class FinanceRecoveryDonationController extends Controller
         $this->audit->record('finance.donation_certificate_voided', $certificate, new: ['reason' => $data['reason']]);
 
         return back()->with('success', 'Zuwendungsbestätigung wurde nachvollziehbar storniert.');
+    }
+
+    public function voidCollectiveCertificate(Request $request, FinanceDonationCollectiveCertificate $collectiveCertificate): RedirectResponse
+    {
+        $this->authorizePermission($request, 'finance.donation_certificates');
+        $data = $request->validate(['reason' => ['required', 'string', 'max:500']]);
+        $collectiveCertificate = $this->recovery->voidCollectiveCertificate($collectiveCertificate, $request->user()->id, $data['reason']);
+        $this->documents->collectiveDonationCertificate($collectiveCertificate);
+        $this->audit->record('finance.donation_collective_certificate_voided', $collectiveCertificate, new: ['reason' => $data['reason']]);
+
+        return back()->with('success', 'Sammelbestätigung wurde nachvollziehbar storniert.');
     }
 
     private function authorizePermission(Request $request, string $permission): void
