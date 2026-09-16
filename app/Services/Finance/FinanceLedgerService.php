@@ -15,7 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class FinanceLedgerService
 {
-    public function __construct(private TenantContext $tenant) {}
+    public function __construct(
+        private TenantContext $tenant,
+        private FinanceControlService $controls,
+    ) {}
 
     public function ensureDefaults(): void
     {
@@ -55,6 +58,7 @@ class FinanceLedgerService
         if ($category->direction !== $data['direction']) {
             throw ValidationException::withMessages(['finance_category_id' => 'Die Kategorie passt nicht zur gewählten Buchungsart.']);
         }
+        $this->controls->assertOpen((string) $data['booking_date'], $account->id);
 
         $gross = round((float) $data['gross_amount'], 2);
         $taxRate = round((float) ($data['tax_rate'] ?? $category->default_tax_rate ?? 0), 2);
@@ -98,6 +102,8 @@ class FinanceLedgerService
         $account = FinanceAccount::query()->where('code', $accountCode)->first()
             ?? FinanceAccount::query()->where('is_default', true)->first()
             ?? FinanceAccount::query()->where('is_active', true)->orderBy('sort_order')->firstOrFail();
+        $this->controls->assertOpen($payment->paid_at->toDateString(), $account->id);
+
         $hasContribution = $invoice->items->contains(fn ($item) => $item->contribution_rate_id !== null);
         $categoryCode = $hasContribution ? 'MITGLIEDSBEITRAEGE' : 'SONSTIGE_EINNAHMEN';
         $category = FinanceCategory::query()->where('code', $categoryCode)->first()
@@ -148,6 +154,8 @@ class FinanceLedgerService
         if (FinanceEntry::query()->where('reversal_of_id', $entry->id)->exists()) {
             throw ValidationException::withMessages(['entry' => 'Diese Buchung wurde bereits storniert.']);
         }
+        $this->controls->assertOpen($entry->booking_date->toDateString(), $entry->finance_account_id);
+        $this->controls->assertOpen(now()->toDateString(), $entry->finance_account_id);
 
         return DB::transaction(function () use ($entry, $userId, $reason): FinanceEntry {
             $reversal = $this->create([
