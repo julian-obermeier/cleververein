@@ -232,18 +232,21 @@ class MemberToolsController extends Controller
             $values = array_combine($headers, array_pad($row, count($headers), null));
             if (! is_array($values)) {
                 $errors++;
+
                 continue;
             }
             $firstName = trim((string) ($values['first_name'] ?? ''));
             $lastName = trim((string) ($values['last_name'] ?? ''));
             if ($firstName === '' || $lastName === '') {
                 $errors++;
+
                 continue;
             }
             $email = trim((string) ($values['email'] ?? '')) ?: null;
             $birthDate = trim((string) ($values['birth_date'] ?? '')) ?: null;
             if ($this->duplicateExists($firstName, $lastName, $email, $birthDate)) {
                 $skipped++;
+
                 continue;
             }
 
