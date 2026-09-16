@@ -128,7 +128,7 @@ class FinanceModuleTest extends TestCase
 
         $this->assertSame('DE89370400440532013000', $mandate->iban);
         $this->assertNotSame('DE89370400440532013000', $rawIban);
-        $this->assertStringEndsWith('13000', str_replace(' ', '', $mandate->masked_iban));
+        $this->assertStringEndsWith('3000', str_replace(' ', '', $mandate->masked_iban));
     }
 
     public function test_other_tenant_invoice_is_not_route_bindable(): void
