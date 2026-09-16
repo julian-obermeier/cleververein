@@ -11,7 +11,7 @@ class ContributionRate extends Model
 {
     use BelongsToTenant, SoftDeletes;
 
-    protected $fillable = ['name', 'code', 'amount', 'interval', 'billing_month', 'description', 'is_active'];
+    protected $fillable = ['name', 'code', 'amount', 'interval', 'scope', 'billing_month', 'description', 'is_active'];
 
     protected $casts = [
         'amount' => 'decimal:2',
