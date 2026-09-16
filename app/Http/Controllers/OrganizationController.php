@@ -60,7 +60,8 @@ class OrganizationController extends Controller
     public function storeUnit(Request $request): RedirectResponse
     {
         $data = $this->validateUnit($request);
-        $parent = $data['parent_id'] ? OrganizationUnit::query()->findOrFail($data['parent_id']) : null;
+        $parentId = $data['parent_id'] ?? null;
+        $parent = $parentId ? OrganizationUnit::query()->findOrFail($parentId) : null;
         $this->authorizePermission($request, 'organization.manage', $parent?->id);
         OrganizationType::query()->whereKey($data['organization_type_id'])->firstOrFail();
 
@@ -85,7 +86,8 @@ class OrganizationController extends Controller
         $this->authorizePermission($request, 'organization.manage', $unit->id);
         $data = $this->validateUnit($request);
         OrganizationType::query()->whereKey($data['organization_type_id'])->firstOrFail();
-        $parent = $data['parent_id'] ? OrganizationUnit::query()->findOrFail($data['parent_id']) : null;
+        $parentId = $data['parent_id'] ?? null;
+        $parent = $parentId ? OrganizationUnit::query()->findOrFail($parentId) : null;
         $old = ['name' => $unit->name, 'parent_id' => $unit->parent_id, 'status' => $unit->status];
 
         if ($unit->parent_id !== $parent?->id) {
