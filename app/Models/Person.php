@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Person extends Model
@@ -15,6 +16,11 @@ class Person extends Model
     protected $fillable = ['public_id', 'salutation', 'title', 'first_name', 'last_name', 'email', 'birth_date', 'contact_data'];
 
     protected $casts = ['birth_date' => 'date', 'contact_data' => 'array'];
+
+    public function members(): HasMany
+    {
+        return $this->hasMany(Member::class);
+    }
 
     public function getDisplayNameAttribute(): string
     {
