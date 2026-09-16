@@ -84,6 +84,7 @@ class BankImportService
             'method' => 'bank_transfer',
             'reference' => Str::limit((string) $transaction->reference, 180, ''),
             'notes' => 'Bankimport: '.$transaction->batch?->original_name,
+            'bank_transaction_id' => $transaction->id,
         ], $userId);
         $transaction->update([
             'status' => 'matched', 'finance_invoice_id' => $invoice->id, 'member_id' => $invoice->member_id,
