@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FunctionDefinition;
+use App\Models\Household;
 use App\Models\Member;
 use App\Models\Membership;
+use App\Models\MemberType;
 use App\Models\OrganizationUnit;
 use App\Models\Person;
 use App\Services\Audit\AuditService;
@@ -31,7 +34,7 @@ class MemberController extends Controller
             ? Member::onlyTrashed()
             : Member::query();
 
-        $query->with(['person', 'memberships.organizationUnit']);
+        $query->with(['person', 'memberships.organizationUnit', 'memberships.memberType']);
 
         if ($search = trim($request->string('q')->toString())) {
             $query->where(function ($memberQuery) use ($search): void {
@@ -51,11 +54,15 @@ class MemberController extends Controller
         if ($organizationId) {
             $query->whereHas('memberships', fn ($membershipQuery) => $membershipQuery->where('organization_unit_id', $organizationId));
         }
+        if ($memberTypeId = $request->integer('member_type_id')) {
+            $query->whereHas('memberships', fn ($membershipQuery) => $membershipQuery->where('member_type_id', $memberTypeId));
+        }
 
         return view('members.index', [
             'members' => $query->orderByDesc('joined_at')->orderByDesc('id')->paginate(25)->withQueryString(),
             'organizations' => OrganizationUnit::query()->with('type')->orderBy('name')->get(),
-            'filters' => $request->only(['q', 'status', 'organization_unit_id']),
+            'memberTypes' => MemberType::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'filters' => $request->only(['q', 'status', 'organization_unit_id', 'member_type_id']),
         ]);
     }
 
@@ -66,6 +73,7 @@ class MemberController extends Controller
 
         return view('members.create', [
             'organizations' => OrganizationUnit::query()->with('type')->where('status', 'active')->orderBy('name')->get(),
+            'memberTypes' => MemberType::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
             'preselectedOrganizationId' => $organizationId,
         ]);
     }
@@ -76,8 +84,13 @@ class MemberController extends Controller
         $organization = $this->organizationFrom($data['organization_unit_id'] ?? null);
         $this->authorizePermission($request, 'members.create', $organization?->id);
         $this->ensureMemberNumberAvailable($data['member_number'] ?? null);
+        $this->ensureNoUnconfirmedDuplicate($data);
 
-        $member = DB::transaction(function () use ($data, $organization): Member {
+        $memberType = filled($data['member_type_id'] ?? null)
+            ? MemberType::query()->where('is_active', true)->findOrFail($data['member_type_id'])
+            : null;
+
+        $member = DB::transaction(function () use ($data, $organization, $memberType): Member {
             $person = Person::query()->create([
                 'public_id' => Str::uuid(),
                 'salutation' => $data['salutation'] ?? null,
@@ -97,6 +110,7 @@ class MemberController extends Controller
                 'joined_at' => $data['joined_at'] ?? null,
                 'left_at' => $data['left_at'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'meta' => $this->memberMeta($data),
             ]);
 
             if (! $member->member_number) {
@@ -106,7 +120,8 @@ class MemberController extends Controller
             if ($organization) {
                 $member->memberships()->create([
                     'organization_unit_id' => $organization->id,
-                    'membership_type' => $data['membership_type'] ?? 'Ordentliches Mitglied',
+                    'member_type_id' => $memberType?->id,
+                    'membership_type' => $memberType?->name ?? ($data['membership_type'] ?? 'Ordentliches Mitglied'),
                     'status' => $data['membership_status'],
                     'starts_at' => $data['membership_starts_at'] ?? $data['joined_at'] ?? null,
                     'ends_at' => $data['membership_ends_at'] ?? null,
@@ -124,12 +139,22 @@ class MemberController extends Controller
 
     public function show(Request $request, Member $member): View
     {
-        $member->load(['person', 'memberships.organizationUnit.type']);
+        $member->load([
+            'person',
+            'memberships.organizationUnit.type',
+            'memberships.memberType',
+            'households.members.person',
+            'functionAssignments.definition',
+            'functionAssignments.organizationUnit',
+        ]);
         $this->authorizeMemberPermission($request, 'members.view', $member);
 
         return view('members.show', [
             'member' => $member,
             'organizations' => OrganizationUnit::query()->with('type')->where('status', 'active')->orderBy('name')->get(),
+            'memberTypes' => MemberType::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'functions' => FunctionDefinition::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'households' => Household::query()->orderBy('name')->get(),
         ]);
     }
 
@@ -141,6 +166,7 @@ class MemberController extends Controller
         return view('members.edit', [
             'member' => $member,
             'organizations' => OrganizationUnit::query()->with('type')->where('status', 'active')->orderBy('name')->get(),
+            'memberTypes' => MemberType::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 
@@ -168,6 +194,7 @@ class MemberController extends Controller
                 'joined_at' => $data['joined_at'] ?? null,
                 'left_at' => $data['left_at'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'meta' => $this->memberMeta($data),
             ]);
         });
 
@@ -212,7 +239,8 @@ class MemberController extends Controller
     {
         $data = $request->validate([
             'organization_unit_id' => ['required', 'integer'],
-            'membership_type' => ['required', 'string', 'max:100'],
+            'member_type_id' => ['nullable', 'integer'],
+            'membership_type' => ['nullable', 'string', 'max:100'],
             'status' => ['required', 'in:active,pending,inactive,ended'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
@@ -220,16 +248,18 @@ class MemberController extends Controller
             'notes' => ['nullable', 'string', 'max:5000'],
         ]);
         $organization = OrganizationUnit::query()->findOrFail($data['organization_unit_id']);
+        $memberType = filled($data['member_type_id'] ?? null) ? MemberType::query()->findOrFail($data['member_type_id']) : null;
         $this->authorizePermission($request, 'members.memberships', $organization->id);
 
-        $membership = DB::transaction(function () use ($member, $data, $organization): Membership {
+        $membership = DB::transaction(function () use ($member, $data, $organization, $memberType): Membership {
             if ((bool) ($data['is_primary'] ?? false)) {
                 $member->memberships()->update(['is_primary' => false]);
             }
 
             return $member->memberships()->create([
                 'organization_unit_id' => $organization->id,
-                'membership_type' => $data['membership_type'],
+                'member_type_id' => $memberType?->id,
+                'membership_type' => $memberType?->name ?? ($data['membership_type'] ?? 'Ordentliches Mitglied'),
                 'status' => $data['status'],
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
@@ -262,21 +292,33 @@ class MemberController extends Controller
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:255'],
             'birth_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'gender' => ['nullable', 'string', 'max:50'],
+            'nationality' => ['nullable', 'string', 'max:80'],
+            'occupation' => ['nullable', 'string', 'max:120'],
             'phone' => ['nullable', 'string', 'max:80'],
             'mobile' => ['nullable', 'string', 'max:80'],
             'street' => ['nullable', 'string', 'max:150'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'city' => ['nullable', 'string', 'max:100'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'emergency_contact' => ['nullable', 'string', 'max:150'],
+            'emergency_phone' => ['nullable', 'string', 'max:80'],
+            'communication_preference' => ['nullable', 'in:email,phone,mobile,post'],
+            'preferred_language' => ['nullable', 'string', 'max:50'],
             'member_number' => ['nullable', 'string', 'max:64'],
             'status' => ['required', 'in:active,pending,inactive,resigned,deceased'],
             'joined_at' => ['nullable', 'date'],
             'left_at' => ['nullable', 'date', 'after_or_equal:joined_at'],
             'notes' => ['nullable', 'string', 'max:10000'],
+            'tags' => ['nullable', 'string', 'max:1000'],
+            'newsletter' => ['nullable', 'boolean'],
+            'force_duplicate' => ['nullable', 'boolean'],
         ];
 
         if ($withInitialMembership) {
             $rules += [
                 'organization_unit_id' => ['nullable', 'integer'],
+                'member_type_id' => ['nullable', 'integer'],
                 'membership_type' => ['nullable', 'string', 'max:100'],
                 'membership_status' => ['required', 'in:active,pending,inactive,ended'],
                 'membership_starts_at' => ['nullable', 'date'],
@@ -290,12 +332,28 @@ class MemberController extends Controller
     private function contactData(array $data): array
     {
         return array_filter([
+            'gender' => $data['gender'] ?? null,
+            'nationality' => $data['nationality'] ?? null,
+            'occupation' => $data['occupation'] ?? null,
             'phone' => $data['phone'] ?? null,
             'mobile' => $data['mobile'] ?? null,
             'street' => $data['street'] ?? null,
             'postal_code' => $data['postal_code'] ?? null,
             'city' => $data['city'] ?? null,
+            'country' => $data['country'] ?? null,
+            'emergency_contact' => $data['emergency_contact'] ?? null,
+            'emergency_phone' => $data['emergency_phone'] ?? null,
+            'communication_preference' => $data['communication_preference'] ?? null,
+            'preferred_language' => $data['preferred_language'] ?? null,
         ], fn ($value) => $value !== null && $value !== '');
+    }
+
+    private function memberMeta(array $data): array
+    {
+        return array_filter([
+            'tags' => collect(explode(',', (string) ($data['tags'] ?? '')))->map(fn ($tag) => trim($tag))->filter()->values()->all(),
+            'newsletter' => (bool) ($data['newsletter'] ?? false),
+        ], fn ($value) => $value !== null && $value !== []);
     }
 
     private function organizationFrom(?int $organizationId): ?OrganizationUnit
@@ -314,6 +372,38 @@ class MemberController extends Controller
         }
         if ($query->exists()) {
             throw ValidationException::withMessages(['member_number' => 'Diese Mitgliedsnummer ist bereits vergeben.']);
+        }
+    }
+
+    private function ensureNoUnconfirmedDuplicate(array $data): void
+    {
+        if ((bool) ($data['force_duplicate'] ?? false)) {
+            return;
+        }
+
+        $firstName = mb_strtolower(trim($data['first_name']));
+        $lastName = mb_strtolower(trim($data['last_name']));
+        $email = filled($data['email'] ?? null) ? mb_strtolower(trim($data['email'])) : null;
+        $birthDate = $data['birth_date'] ?? null;
+
+        $candidates = Member::withTrashed()->with('person')->whereHas('person', function ($query) use ($firstName, $lastName, $email, $birthDate): void {
+            $query->where(function ($person) use ($firstName, $lastName, $birthDate): void {
+                $person->whereRaw('LOWER(first_name) = ?', [$firstName])
+                    ->whereRaw('LOWER(last_name) = ?', [$lastName]);
+                if ($birthDate) {
+                    $person->whereDate('birth_date', $birthDate);
+                }
+            });
+            if ($email) {
+                $query->orWhereRaw('LOWER(email) = ?', [$email]);
+            }
+        })->limit(5)->get();
+
+        if ($candidates->isNotEmpty()) {
+            $matches = $candidates->map(fn (Member $member) => $member->member_number.' · '.$member->person->display_name)->implode(', ');
+            throw ValidationException::withMessages([
+                'duplicate' => 'Mögliche Dublette gefunden: '.$matches.'. Prüfe den bestehenden Datensatz oder aktiviere „Trotz Dublettenwarnung anlegen“.',
+            ]);
         }
     }
 
