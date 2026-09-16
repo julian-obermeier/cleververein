@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomFieldController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentTemplateController;
+use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\FunctionDirectoryController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\InstallController;
@@ -86,6 +87,21 @@ Route::middleware('installed')->group(function (): void {
         Route::get('/dokumente/vorlagen/{template}/vorschau', [DocumentTemplateController::class, 'preview'])->name('documents.templates.preview');
         Route::post('/dokumente/vorlagen/{template}/erzeugen', [DocumentTemplateController::class, 'generate'])->name('documents.templates.generate');
         Route::get('/dokumente/erzeugt/{document}/download', [DocumentTemplateController::class, 'download'])->name('documents.generated.download');
+
+        Route::get('/finanzen', [FinanceController::class, 'index'])->name('finance.index');
+        Route::post('/finanzen/beitragssaetze', [FinanceController::class, 'storeRate'])->name('finance.rates.store');
+        Route::patch('/finanzen/beitragssaetze/{rate}/status', [FinanceController::class, 'toggleRate'])->name('finance.rates.toggle');
+        Route::post('/finanzen/beitragsregeln', [FinanceController::class, 'storeRule'])->name('finance.rules.store');
+        Route::patch('/finanzen/beitragsregeln/{rule}/status', [FinanceController::class, 'toggleRule'])->name('finance.rules.toggle');
+        Route::post('/finanzen/beitragsausnahmen', [FinanceController::class, 'storeOverride'])->name('finance.overrides.store');
+        Route::post('/finanzen/beitragslauf', [FinanceController::class, 'runContributions'])->name('finance.contributions.run');
+        Route::post('/finanzen/rechnungen', [FinanceController::class, 'storeInvoice'])->name('finance.invoices.store');
+        Route::get('/finanzen/rechnungen/{invoice}', [FinanceController::class, 'show'])->name('finance.invoices.show');
+        Route::post('/finanzen/rechnungen/{invoice}/ausstellen', [FinanceController::class, 'issueInvoice'])->name('finance.invoices.issue');
+        Route::post('/finanzen/rechnungen/{invoice}/zahlungen', [FinanceController::class, 'storePayment'])->name('finance.invoices.payments.store');
+        Route::post('/finanzen/rechnungen/{invoice}/mahnungen', [FinanceController::class, 'storeDunning'])->name('finance.invoices.dunnings.store');
+        Route::post('/finanzen/sepa', [FinanceController::class, 'storeSepa'])->name('finance.sepa.store');
+        Route::patch('/finanzen/sepa/{mandate}/widerrufen', [FinanceController::class, 'revokeSepa'])->name('finance.sepa.revoke');
 
         Route::get('/mitglieder/{member}/crm', [MemberCrmController::class, 'dashboard'])->name('members.crm');
         Route::put('/mitglieder/{member}/crm/zusatzfelder', [MemberCrmController::class, 'saveCustomFields'])->name('members.crm.custom-fields.update');
