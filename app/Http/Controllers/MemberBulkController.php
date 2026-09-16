@@ -18,8 +18,7 @@ class MemberBulkController extends Controller
         private PermissionService $permissions,
         private AuditService $audit,
         private TenantContext $tenant,
-    ) {
-    }
+    ) {}
 
     public function apply(Request $request): RedirectResponse
     {
@@ -51,18 +50,21 @@ class MemberBulkController extends Controller
                     $old = $member->status;
                     $member->update(['status' => $data['status']]);
                     $this->audit->record('member.bulk_status_changed', $member, old: ['status' => $old], new: ['status' => $member->status]);
+
                     continue;
                 }
 
                 if ($data['action'] === 'add_tag' && $tag) {
                     $member->tags()->syncWithoutDetaching([$tag->id => ['tenant_id' => $this->tenant->id()]]);
                     $this->audit->record('member.bulk_tag_added', $member, new: ['tag_id' => $tag->id, 'tag' => $tag->name]);
+
                     continue;
                 }
 
                 if ($data['action'] === 'remove_tag' && $tag) {
                     $member->tags()->detach($tag->id);
                     $this->audit->record('member.bulk_tag_removed', $member, old: ['tag_id' => $tag->id, 'tag' => $tag->name]);
+
                     continue;
                 }
 
