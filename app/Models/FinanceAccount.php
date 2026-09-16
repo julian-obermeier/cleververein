@@ -26,4 +26,14 @@ class FinanceAccount extends Model
     {
         return $this->hasMany(FinanceEntry::class);
     }
+
+    public function cashClosings(): HasMany
+    {
+        return $this->hasMany(FinanceCashClosing::class);
+    }
+
+    public function cashAudits(): HasMany
+    {
+        return $this->hasMany(FinanceCashAudit::class);
+    }
 }
