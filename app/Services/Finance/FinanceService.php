@@ -212,7 +212,9 @@ class FinanceService
         $net = round((float) $invoice->items()->sum('net_amount'), 2);
         $tax = round((float) $invoice->items()->sum('tax_amount'), 2);
         $gross = round((float) $invoice->items()->sum('gross_amount'), 2);
-        $paid = round((float) $invoice->payments()->sum('amount'), 2);
+        $payments = round((float) $invoice->payments()->sum('amount'), 2);
+        $adjustments = round((float) $invoice->paymentAdjustments()->where('status', 'posted')->sum('amount'), 2);
+        $paid = max(0, round($payments - $adjustments, 2));
         $credited = round((float) $invoice->creditNotes()->where('status', 'issued')->sum('amount'), 2);
         $status = $invoice->status;
 
