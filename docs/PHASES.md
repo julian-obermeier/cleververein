@@ -8,7 +8,7 @@
 | 4 Veranstaltungen und Kommunikation | Teilweise vorbereitet | Kommunikationshistorie je Mitglied vorhanden; Veranstaltungen und zentrale Kommunikation noch offen |
 | 5 Dokumentengenerator | Erster produktiver Funktionsblock | Mandantenfähige Vorlagen, visueller Editor, Platzhalter, PDF-Vorschau, private Ablage, Historie, Rechte und Featuretests vorhanden |
 | 6 Formulare und Workflows | Offen | – |
-| 7 Beiträge und Verwaltung | In Umsetzung, fünfter produktiver Funktionsblock | Beiträge, Rechnungen, Finanzdokumente, SEPA, Bankabgleich, Journal, Belege, Kassenbuch, Abschlüsse, Periodensperren, Prüfungen, Rücklastschriften, Erstattungen, Spenden und Bescheinigungsworkflow vorhanden |
+| 7 Beiträge und Verwaltung | In Umsetzung, sechster produktiver Funktionsblock | Beiträge, Rechnungen, Finanzdokumente, SEPA, CSV/CAMT-Bankabgleich, Journal, Belege, Kassenbuch, Abschlüsse, Periodensperren, Prüfungen, Rücklastschriften, Erstattungen, Spenden, Einzel-/Sammelbestätigungen und Steuerberater-Export vorhanden |
 | 8 SaaS-Ausbau | Offen | Tenant-Kern vorhanden, Tarif-/Aboverwaltung der SaaS-Plattform noch offen |
 | 9 Stabilisierung | Laufend | CI prüft Vite-Build, Pint und PHPUnit; vollständige Release-/Updateabnahme noch offen |
 
@@ -85,11 +85,16 @@ Bereits umgesetzt:
 - expliziter SEPA-Lebenszyklus: erzeugt, exportiert und als eingereicht markiert
 - private Speicherung der SEPA-XML-Dateien
 - CSV-Bankimport mit Datei-/Umsatz-Dublettenschutz
+- CAMT.053- und CAMT.054-Import mit Message-ID, EndToEnd-ID, Mandatsreferenz, Banktransaktionscode und Rückgabegrund
+- namespace-/versionsrobuste CAMT-Verarbeitung
 - automatische Zahlungszuordnung über Rechnungsnummer sowie ergänzend Mitgliedsnummer und exakten Betrag
+- automatische SEPA-Rücklastschrift nur bei exakter EndToEnd-ID, eingereichtem Lastschriftlauf und übereinstimmendem Betrag
+- unsichere negative Bankumsätze bleiben bewusst ungeklärt
+- eigener Bankabgleich-Arbeitsbereich mit Importhistorie, offenen Umsätzen und automatisch verarbeiteten Rücklastschriften
 - manuelle Zuordnung und bewusstes Ignorieren ungeklärter Bankumsätze
 - Mahnstufen und Mahngebühren als separate Historie
 - private Mahnungs-PDFs
-- Finanz-Cockpit plus separater Bereich „Finanzoperationen“ für sensible Stammdaten, SEPA und Bankabgleich
+- Finanz-Cockpit plus separate Arbeitsbereiche für Finanzoperationen, Bankabgleich, Finanzjournal, Kasse/Prüfung, Spenden und Steuerberater-Übergabe
 - Finanzkonten für Bank, Kasse, Verrechnung und frei definierbare weitere Konten
 - frei definierbare Einnahmen- und Ausgabenkategorien mit optionalem Standard-Steuersatz
 - unveränderliches Finanzjournal mit fortlaufender BU-Jahressequenz
@@ -117,14 +122,20 @@ Bereits umgesetzt:
 - steuerliche Stammdaten für Freistellungs-/Körperschaftsteuerbescheid oder § 60a AO
 - kontrollierte Freischaltung und Altersprüfung vor Ausstellung von Zuwendungsbestätigungen
 - unveränderliche Spender-, Empfänger- und Steuer-Snapshots je ausgestellter Bestätigung
-- private Zuwendungsbestätigungs-PDFs mit eigener ZB-Jahressequenz und nachvollziehbarem Storno
-- eigene Rechte für Finanzbuchungen, Berichte, Belege, Kasse, Periodensperren, Kassenprüfung, Zahlungskorrekturen und Spenden
+- private Einzel-Zuwendungsbestätigungs-PDFs mit ZB-Jahressequenz und nachvollziehbarem Storno
+- Sammel-Zuwendungsbestätigungen mit derselben ZB-Sequenz, Gesamtbetrag und vollständiger Einzelzuwendungsanlage
+- Sperre gegen parallele gültige Einzel- und Sammelbestätigung derselben Zuwendung
+- DATEV-nahe, ausdrücklich nicht als zertifizierter Direktimport bezeichnete Steuerberater-Arbeitsdatei
+- frei pflegbare Sachkonto-/Gegenkonto-Zuordnung sowie optionale Berater-/Mandantennummer und Kontenrahmen
+- serverseitige Vollständigkeitsprüfung der Kontierung vor Steuerberater-Export
+- eigene Rechte für Finanzbuchungen, Berichte, Belege, Kasse, Periodensperren, Kassenprüfung, Zahlungskorrekturen, Spenden und Steuerberater-Export
 - Fresh-Install- und neue-Tenant-taugliche Initialisierung der Standardkonten/-kategorien
-- Tenant-Isolation, Audit-Logging und Featuretests für Journal, Belege, Kassenkontrollen, Zahlungskorrekturen und Spenden
+- Tenant-Isolation, Audit-Logging und Featuretests für Journal, Belege, Kassenkontrollen, Zahlungskorrekturen, Spenden, CAMT, Sammelbestätigungen und Steuerexport
 
 Nächste Ausbaustufen:
 
-- CAMT-Import zusätzlich zum generischen Bank-CSV
-- Bank-spezifische SEPA-Validierung/XSD-Prüfung vor Export
-- Sammelbestätigungen für mehrere Zuwendungen
-- weitergehende Jahresberichte und Exporte für Steuerberatung/DATEV-nahe Weiterverarbeitung
+- bank-/institutsspezifische CAMT-Sonderfälle und erweiterte Referenznormalisierung
+- SEPA-XSD-Validierung vor Export und optional bankbezogene Vorabprüfung
+- weitergehende Jahresberichte, EÜR-nahe Auswertungen und Exportprofile für Steuerberatung
+- automatisierte Zuordnungsregeln für wiederkehrende Einnahmen/Ausgaben mit manueller Freigabe
+- offene-Posten- und Liquiditätsprognosen
