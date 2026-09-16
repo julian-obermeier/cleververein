@@ -17,8 +17,39 @@ class FinanceLedgerService
 {
     public function __construct(private TenantContext $tenant) {}
 
+    public function ensureDefaults(): void
+    {
+        $accounts = [
+            ['name' => 'Bank', 'code' => 'BANK', 'type' => 'bank', 'is_default' => true, 'sort_order' => 10],
+            ['name' => 'Kasse', 'code' => 'KASSE', 'type' => 'cash', 'is_default' => false, 'sort_order' => 20],
+            ['name' => 'Verrechnung', 'code' => 'VERRECHNUNG', 'type' => 'clearing', 'is_default' => false, 'sort_order' => 90],
+        ];
+        foreach ($accounts as $account) {
+            FinanceAccount::query()->firstOrCreate(
+                ['code' => $account['code']],
+                [...$account, 'currency' => 'EUR', 'opening_balance' => 0, 'is_active' => true],
+            );
+        }
+
+        $categories = [
+            ['name' => 'Mitgliedsbeiträge', 'code' => 'MITGLIEDSBEITRAEGE', 'direction' => 'income', 'sort_order' => 10],
+            ['name' => 'Spenden', 'code' => 'SPENDEN', 'direction' => 'income', 'sort_order' => 20],
+            ['name' => 'Sonstige Einnahmen', 'code' => 'SONSTIGE_EINNAHMEN', 'direction' => 'income', 'sort_order' => 90],
+            ['name' => 'Betriebsausgaben', 'code' => 'BETRIEBSAUSGABEN', 'direction' => 'expense', 'sort_order' => 110],
+            ['name' => 'Gebühren', 'code' => 'GEBUEHREN', 'direction' => 'expense', 'sort_order' => 120],
+            ['name' => 'Sonstige Ausgaben', 'code' => 'SONSTIGE_AUSGABEN', 'direction' => 'expense', 'sort_order' => 190],
+        ];
+        foreach ($categories as $category) {
+            FinanceCategory::query()->firstOrCreate(
+                ['code' => $category['code']],
+                [...$category, 'default_tax_rate' => 0, 'is_active' => true],
+            );
+        }
+    }
+
     public function postManual(array $data, int $userId): FinanceEntry
     {
+        $this->ensureDefaults();
         $account = FinanceAccount::query()->where('is_active', true)->findOrFail($data['finance_account_id']);
         $category = FinanceCategory::query()->where('is_active', true)->findOrFail($data['finance_category_id']);
         if ($category->direction !== $data['direction']) {
@@ -52,6 +83,7 @@ class FinanceLedgerService
 
     public function postPayment(FinancePayment $payment, FinanceInvoice $invoice, int $userId, ?BankTransaction $transaction = null): FinanceEntry
     {
+        $this->ensureDefaults();
         $existing = FinanceEntry::query()->where('finance_payment_id', $payment->id)->first();
         if ($existing) {
             if ($transaction && ! $existing->bank_transaction_id) {
