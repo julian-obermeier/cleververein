@@ -30,6 +30,7 @@ class FinanceLedgerController extends Controller
     public function index(Request $request): View
     {
         $this->authorizeAny($request, ['finance.accounting', 'finance.reports', 'finance.view']);
+        $this->ledger->ensureDefaults();
         $year = (int) ($request->integer('year') ?: now()->year);
         $month = $request->filled('month') ? (int) $request->integer('month') : null;
 
