@@ -126,7 +126,7 @@ class EventsCommunicationModuleTest extends TestCase
 
         $this->actingAs($user)->get(route('communications.index', ['event' => $event->id]))
             ->assertOk()
-            ->assertSee('E-Mail-Vorlagen & Kampagnen')
+            ->assertSeeText('E-Mail-Vorlagen & Kampagnen')
             ->assertSee('Einladung: {{veranstaltung.titel}}', false)
             ->assertSee('{{mitglied.vorname}}', false)
             ->assertSee('{{anmeldung.link}}', false);
