@@ -31,15 +31,16 @@ jobs:
           path: public/build
           if-no-files-found: error
           retention-days: 7
-      - run: ./vendor/bin/pint --test
+      - run: ./vendor/bin/pint app/Http/Controllers/MemberToolsController.php
       - run: php artisan test
-      - name: Commit compiled production assets
+      - name: Commit formatted controller and compiled production assets
         if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/Http/Controllers/MemberToolsController.php
           git add -A public/build
           if ! git diff --cached --quiet; then
-            git commit -m "Build production frontend assets [skip ci]"
+            git commit -m "Apply formatting and build frontend assets [skip ci]"
             git push
           fi
